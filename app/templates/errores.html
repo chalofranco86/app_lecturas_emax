@@ -1,0 +1,208 @@
+<!-- templates/errores.html -->
+{% extends "base.html" %}
+
+{% block title %}Lista de Códigos con Errores{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <h1>Lista de Códigos con Errores</h1>
+
+        <!-- Mensaje de éxito o error -->
+        {% if message %}
+            <div class="alert alert-{{ message_type or 'info' }}">
+                {{ message }}
+            </div>
+        {% endif %}
+
+        <!-- Buscador de códigos con errores -->
+        <div class="search-container">
+            <form action="{{ url_for('listar_errores') }}" method="GET" class="search-form">
+                <input
+                    type="text"
+                    name="codigo_tarjeta"
+                    placeholder="Buscar por código de tarjeta..."
+                    value="{{ request.args.get('codigo_tarjeta', '') }}"
+                >
+                <button type="submit" class="button search">Buscar</button>
+                <a href="{{ url_for('listar_errores') }}" class="button clear">Limpiar</a>
+            </form>
+        </div>
+
+        <!-- Tabla de inmuebles con errores -->
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Código de Tarjeta</th>
+                        <th>Dirección</th>
+                        <th>Ruta</th>
+                        <th>Tarifa</th>
+                        <th>Contador de Agua</th>
+                        <th>Coordenadas</th>
+                        <th>Fecha de Registro</th>
+                        <th>Usuario</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for error in errores %}
+                        <tr>
+                            <td>{{ error.id }}</td>
+                            <td>{{ error.codigo_tarjeta }}</td>
+                            <td>{{ error.direccion_servicio }}</td>
+                            <td>{{ error.ruta }}</td>
+                            <td>{{ error.tarifa }}</td>
+                            <td>{{ error.contador_agua }}</td>
+                            <td>
+                                {% if error.coordenada_x and error.coordenada_y %}
+                                    {{ error.coordenada_x }}, {{ error.coordenada_y }}
+                                    <a
+                                        href="https://www.google.com/maps?q={{ error.coordenada_y }},{{ error.coordenada_x }}"
+                                        target="_blank"
+                                        style="color: #1e88e5; text-decoration: none; font-size: 12px;"
+                                    >
+                                        (Ver en Maps)
+                                    </a>
+                                {% else %}
+                                    No disponibles
+                                {% endif %}
+                            </td>
+                            <td>{{ error.fecha_registro }}</td>
+                            <td>{{ error.nombre_usuario }}</td>
+                            <td>
+                                <a href="{{ url_for('detalle_error', error_id=error.id) }}" class="button view">Ver</a>
+                                <a href="{{ url_for('editar_error', error_id=error.id) }}" class="button edit">Editar</a>
+                                <a href="{{ url_for('eliminar_error', error_id=error.id) }}" class="button delete" onclick="return confirm('¿Estás seguro de que quieres eliminar este registro?')">Eliminar</a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <style>
+        /* Estilos para la tabla */
+        .table-container {
+            overflow-x: auto;
+            margin-top: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: white;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        th {
+            background-color: #1e88e5;
+            color: white;
+            font-weight: bold;
+        }
+
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+
+        /* Estilos para los botones de acciones */
+        .button {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 4px;
+            text-decoration: none;
+            font-size: 14px;
+            margin: 0 3px;
+            transition: background-color 0.3s;
+        }
+
+        .button.view {
+            background-color: #4caf50;
+            color: white;
+        }
+
+        .button.edit {
+            background-color: #2196f3;
+            color: white;
+        }
+
+        .button.delete {
+            background-color: #f44336;
+            color: white;
+        }
+
+        .button.search {
+            background-color: #ff9800;
+            color: white;
+        }
+
+        .button.clear {
+            background-color: #9e9e9e;
+            color: white;
+        }
+
+        .button:hover {
+            opacity: 0.8;
+        }
+
+        /* Estilos para mensajes de alerta */
+        .alert {
+            padding: 10px 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .alert-info {
+            background-color: #e3f2fd;
+            color: #1565c0;
+        }
+
+        .alert-success {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .alert-error {
+            background-color: #ffebee;
+            color: #c62828;
+        }
+
+        /* Estilos para el buscador */
+        .search-container {
+            margin-top: 20px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .search-form {
+            display: flex;
+            gap: 10px;
+            width: 100%;
+            max-width: 500px;
+        }
+
+        .search-form input[type="text"] {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid #bbdefb;
+            border-radius: 6px;
+            font-size: 16px;
+        }
+
+        .search-form input[type="text"]:focus {
+            outline: none;
+            border-color: #1e88e5;
+        }
+    </style>
+{% endblock %}

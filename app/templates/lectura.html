@@ -1,0 +1,544 @@
+<!-- templates/lectura.html -->
+{% extends "base.html" %}
+
+{% block title %}Registrar Lectura para {{ inmueble.codigo_tarjeta }}{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <h1>Registrar Lectura para Código {{ inmueble.codigo_tarjeta }}</h1>
+
+        <div class="inmueble-info">
+            <p><strong>Nombre:</strong> {{ inmueble.nombre }}</p>
+            <p><strong>Dirección:</strong> {{ inmueble.direccion }}</p>
+            <p><strong>Tipo de Inmueble:</strong> {{ inmueble.tipo_inmueble }}</p>
+            <p><strong>NIM:</strong> {{ inmueble.nim }}</p>
+            <p><strong>Ruta:</strong> {{ inmueble.ruta }}</p>
+            <p><strong>Contador:</strong> {{ inmueble.nit }}</p>
+        </div>
+
+        <!-- Campo oculto para el usuario_id -->
+        <input type="hidden" name="usuario_id" value="{{ current_user.id }}">
+
+        <!-- Mostrar el nombre del usuario autenticado -->
+        <div class="usuario-info">
+            <p><strong>Usuario:</strong> {{ current_user.nombre }} (ID: {{ current_user.id }})</p>
+        </div>
+
+        <!-- Mensaje para mostrar las coordenadas obtenidas -->
+        <div id="coordenadas-message" style="margin-bottom: 15px; padding: 10px; background-color: #e8f5e9; border-radius: 4px; color: #2e7d32;">
+            Coordenadas: <span id="coordenadas-value">Obteniendo ubicación...</span>
+            <button type="button" onclick="obtenerUbicacion()" style="margin-left: 10px; background-color: #1e88e5; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">Actualizar Ubicación</button>
+        </div>
+
+        <h2>Datos de Lectura</h2>
+        <form action="/lecturas" method="POST" enctype="multipart/form-data" id="lecturaForm">
+            <input type="hidden" name="codigo_inmueble" value="{{ inmueble.codigo_tarjeta }}">
+
+            <!-- Campos ocultos para coordenadas (DENTRO del formulario) -->
+            <input type="hidden" id="coordenada_x" name="coordenada_x">
+            <input type="hidden" id="coordenada_y" name="coordenada_y">
+
+            <!-- Campo para la lectura (número de 6 dígitos) -->
+            <label for="lectura">Lectura (6 dígitos máx.):</label>
+            <input type="number" id="lectura" name="lectura" min="0" max="999999" required>
+
+            <!-- Campo para observaciones -->
+            <label for="observacion">Observación:</label>
+            <textarea id="observacion" name="observacion" rows="3" placeholder="Ejemplo: Contador dañado, lectura estimada..."></textarea>
+
+            <!-- Campo para mes de proceso -->
+            <label for="mes_proceso">Mes de Proceso:</label>
+            <input type="text" id="mes_proceso" name="mes_proceso" placeholder="Ejemplo: Enero 2026, 01-2026, 1" required>
+
+            <h2>Subir Fotos</h2>
+
+            <!-- Foto del Contador -->
+            <label>Foto del Contador:</label>
+            <div class="camera-container">
+                <div class="camera-preview" id="contadorPreview">
+                    <p>No se ha seleccionado ninguna imagen.</p>
+                </div>
+                <div class="camera-buttons">
+                    <button type="button" onclick="abrirCamara('contador')">Tomar Foto</button>
+                    <button type="button" onclick="abrirArchivos('contador')">Cargar Imagen</button>
+                </div>
+                <input type="file" id="foto_contador" name="foto_contador" accept="image/*" style="display: none;">
+                <div id="contadorModal" class="modal" style="display: none;">
+                    <div class="modal-content">
+                        <video id="contadorVideo" autoplay playsinline style="width: 100%; max-height: 300px; background: #f5f5f5;"></video>
+                        <div style="display: flex; gap: 10px; margin-top: 10px;">
+                            <button type="button" onclick="tomarFoto('contador')">Tomar Foto</button>
+                            <button type="button" onclick="cerrarCamara('contador')">Cancelar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Foto del Inmueble -->
+            <label>Foto del Inmueble:</label>
+            <div class="camera-container">
+                <div class="camera-preview" id="inmueblePreview">
+                    <p>No se ha seleccionado ninguna imagen.</p>
+                </div>
+                <div class="camera-buttons">
+                    <button type="button" onclick="abrirCamara('inmueble')">Tomar Foto</button>
+                    <button type="button" onclick="abrirArchivos('inmueble')">Cargar Imagen</button>
+                </div>
+                <input type="file" id="foto_inmueble" name="foto_inmueble" accept="image/*" style="display: none;">
+                <div id="inmuebleModal" class="modal" style="display: none;">
+                    <div class="modal-content">
+                        <video id="inmuebleVideo" autoplay playsinline style="width: 100%; max-height: 300px; background: #f5f5f5;"></video>
+                        <div style="display: flex; gap: 10px; margin-top: 10px;">
+                            <button type="button" onclick="tomarFoto('inmueble')">Tomar Foto</button>
+                            <button type="button" onclick="cerrarCamara('inmueble')">Cancelar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit">Registrar Lectura</button>
+        </form>
+    </div>
+
+    <style>
+        /* Estilos globales (mantén los que ya tienes) */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f8ff;
+            margin: 0;
+            padding: 0;
+            color: #333;
+        }
+
+        .container {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            width: 90%;
+            max-width: 800px;
+            margin: 20px auto;
+        }
+
+        h1, h2 {
+            color: #1e88e5;
+            margin-bottom: 15px;
+        }
+
+        h2 {
+            margin-top: 20px;
+            font-size: 20px;
+        }
+
+        .inmueble-info {
+            background-color: #e3f2fd;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .inmueble-info p {
+            margin: 8px 0;
+            font-size: 16px;
+        }
+
+        .inmueble-info strong, .usuario-info strong {
+            color: #1565c0;
+        }
+
+        .usuario-info {
+            background-color: #e3f2fd;
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 15px;
+            text-align: center;
+            font-size: 16px;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        input[type="number"],
+        input[type="text"],
+        textarea,
+        input[type="file"] {
+            padding: 10px;
+            border: 2px solid #bbdefb;
+            border-radius: 6px;
+            font-size: 16px;
+            background-color: white;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .camera-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .camera-preview {
+            width: 100%;
+            max-height: 300px;
+            border: 2px dashed #bbdefb;
+            border-radius: 6px;
+            background-color: #f5f5f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        .camera-preview img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+
+        .camera-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .camera-buttons button {
+            flex: 1;
+            padding: 8px;
+            font-size: 14px;
+        }
+
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 500px;
+        }
+    </style>
+
+    <script>
+        // Variables para el stream de la cámara
+        let contadorStream = null;
+        let inmuebleStream = null;
+
+        // Función para obtener la ubicación usando IP-API (método principal)
+        async function obtenerUbicacionPorIP() {
+            try {
+                const msgSpan = document.getElementById('coordenadas-value');
+                msgSpan.textContent = 'Obteniendo ubicación por IP...';
+
+                const response = await fetch('http://ip-api.com/json/?fields=lat,lon,status,message,query,country,city');
+                const data = await response.json();
+
+                if (data.status === 'success') {
+                    const { lat, lon, query, country, city } = data;
+
+                    // Validar que las coordenadas no sean las de Nueva Zelanda (175.643965, -40.320663)
+                    if (Math.abs(lon - 175.643965) < 0.1 && Math.abs(lat - (-40.320663)) < 0.1) {
+                        msgSpan.textContent = `Ubicación por IP no válida (${query}, ${country}, ${city}). Usando valores por defecto de Guatemala.`;
+                        // Usar coordenadas por defecto de Guatemala
+                        document.getElementById('coordenada_x').value = '-90.518039';
+                        document.getElementById('coordenada_y').value = '14.833925';
+                        return { coordenadaX: '-90.518039', coordenadaY: '14.833925' };
+                    } else {
+                        // Usar las coordenadas obtenidas
+                        document.getElementById('coordenada_x').value = lon;
+                        document.getElementById('coordenada_y').value = lat;
+                        msgSpan.textContent = `Ubicación por IP (${query}, ${country}, ${city}): Longitud: ${lon}, Latitud: ${lat}`;
+                        return { coordenadaX: lon, coordenadaY: lat };
+                    }
+                } else {
+                    throw new Error(data.message || "No se pudo obtener la ubicación por IP.");
+                }
+            } catch (error) {
+                console.error("Error al obtener ubicación por IP:", error);
+                throw error;
+            }
+        }
+
+        // Función para obtener la ubicación del dispositivo (geolocalización del navegador)
+        // Función para obtener la ubicación del dispositivo (geolocalización del navegador)
+        async function obtenerUbicacionPorGPS() {
+            return new Promise((resolve, reject) => {
+                if (!navigator.geolocation) {
+                    reject(new Error("La geolocalización no está soportada en este navegador."));
+                    return;
+                }
+
+                const msgSpan = document.getElementById('coordenadas-value');
+                msgSpan.textContent = 'Obteniendo ubicación por GPS (alta precisión)...';
+
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        const { longitude, latitude, accuracy } = position.coords;
+
+                        // Validar que las coordenadas no sean las de Nueva Zelanda
+                        if (Math.abs(longitude - 175.643965) < 0.1 && Math.abs(latitude - (-40.320663)) < 0.1) {
+                            msgSpan.textContent = `Ubicación por GPS no válida. Usando valores por defecto de Guatemala.`;
+                            document.getElementById('coordenada_x').value = '-90.518039';
+                            document.getElementById('coordenada_y').value = '14.833925';
+                            resolve({ coordenadaX: '-90.518039', coordenadaY: '14.833925' });
+                        } else {
+                            document.getElementById('coordenada_x').value = longitude;
+                            document.getElementById('coordenada_y').value = latitude;
+                            msgSpan.textContent = `Ubicación por GPS: Longitud: ${longitude}, Latitud: ${latitude} (Precisión: ${accuracy} m)`;
+                            resolve({ coordenadaX: longitude, coordenadaY: latitude });
+                        }
+                    },
+                    (error) => {
+                        console.error("Error con geolocalización del navegador:", error);
+                        reject(error);
+                    },
+                    {
+                        enableHighAccuracy: true,  // Forzar alta precisión
+                        timeout: 30000,             // Aumentar tiempo de espera a 30 segundos
+                        maximumAge: 0              // No usar datos en caché
+                    }
+                );
+            });
+        }
+
+        async function obtenerUbicacionPorGoogle() {
+            try {
+                const msgSpan = document.getElementById('coordenadas-value');
+                msgSpan.textContent = 'Obteniendo ubicación por Google...';
+
+                // Reemplaza 'TU_CLAVE_API' con tu clave de Google Maps
+                const response = await fetch(
+                    `https://www.googleapis.com/geolocation/v1/geolocate?key=TU_CLAVE_API`,
+                    {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            considerIp: true, // Usar la IP como respaldo
+                        }),
+                    }
+                );
+
+                const data = await response.json();
+
+                if (data.location) {
+                    const { lat, lng } = data.location;
+                    const { accuracy } = data;
+
+                    // Validar que las coordenadas no sean las de Nueva Zelanda
+                    if (Math.abs(lng - 175.643965) < 0.1 && Math.abs(lat - (-40.320663)) < 0.1) {
+                        msgSpan.textContent = `Ubicación por Google no válida. Usando valores por defecto de Guatemala.`;
+                        document.getElementById('coordenada_x').value = '-90.518039';
+                        document.getElementById('coordenada_y').value = '14.833925';
+                        return { coordenadaX: '-90.518039', coordenadaY: '14.833925' };
+                    } else {
+                        document.getElementById('coordenada_x').value = lng;
+                        document.getElementById('coordenada_y').value = lat;
+                        msgSpan.textContent = `Ubicación por Google: Longitud: ${lng}, Latitud: ${lat} (Precisión: ${accuracy} m)`;
+                        return { coordenadaX: lng, coordenadaY: lat };
+                    }
+                } else {
+                    throw new Error("No se pudo obtener la ubicación con Google.");
+                }
+            } catch (error) {
+                console.error("Error al obtener ubicación por Google:", error);
+                throw error;
+            }
+        }
+
+        // Función principal para obtener la ubicación (prioriza IP-API)
+        async function obtenerUbicacion() {
+            try {
+                // 1. Intentar con Google Maps (método principal)
+                try {
+                    return await obtenerUbicacionPorGoogle();
+                } catch (googleError) {
+                    console.warn("Google Maps falló, intentando con IP-API:", googleError);
+                }
+
+                // 2. Si Google falla, intentar con IP-API
+                try {
+                    return await obtenerUbicacionPorIP();
+                } catch (ipError) {
+                    console.warn("IP-API falló, intentando con GPS:", ipError);
+                }
+
+                // 3. Si todo falla, usar GPS del navegador
+                try {
+                    return await obtenerUbicacionPorGPS();
+                } catch (gpsError) {
+                    console.error("GPS falló:", gpsError);
+                    throw new Error("No se pudo obtener la ubicación por Google, IP ni GPS.");
+                }
+            } catch (error) {
+                console.error("Error al obtener la ubicación:", error);
+                // Usar coordenadas por defecto de Guatemala si todo falla
+                const msgSpan = document.getElementById('coordenadas-value');
+                msgSpan.textContent = `Error: ${error.message}. Usando coordenadas por defecto de Guatemala.`;
+                document.getElementById('coordenada_x').value = '-90.518039';
+                document.getElementById('coordenada_y').value = '14.833925';
+                return { coordenadaX: '-90.518039', coordenadaY: '14.833925' };
+            }
+        }
+
+        // Manejador del evento submit
+        async function manejarEnvio(event) {
+            event.preventDefault();
+
+            try {
+                // Obtener coordenadas si no están establecidas
+                if (!document.getElementById('coordenada_x').value || !document.getElementById('coordenada_y').value) {
+                    await obtenerUbicacion();
+                }
+
+                // Verificar que las coordenadas no estén vacías
+                const coordenadaX = document.getElementById('coordenada_x').value;
+                const coordenadaY = document.getElementById('coordenada_y').value;
+
+                if (!coordenadaX || !coordenadaY) {
+                    alert("No se pudieron obtener las coordenadas. Intenta de nuevo.");
+                    return;
+                }
+
+                // Validar que las coordenadas no sean las de Nueva Zelanda
+                if (Math.abs(parseFloat(coordenadaX) - 175.643965) < 0.1 && Math.abs(parseFloat(coordenadaY) - (-40.320663)) < 0.1) {
+                    alert("Las coordenadas obtenidas no son válidas. Se usarán coordenadas por defecto de Guatemala.");
+                    document.getElementById('coordenada_x').value = '-90.518039';
+                    document.getElementById('coordenada_y').value = '14.833925';
+                }
+
+                // Enviar el formulario
+                event.target.submit();
+            } catch (error) {
+                console.error("Error al manejar el envío:", error);
+                alert("Error al obtener la ubicación: " + error.message);
+            }
+        }
+
+        // Función para abrir la cámara
+        async function abrirCamara(tipo) {
+            try {
+                const modal = document.getElementById(`${tipo}Modal`);
+                const video = document.getElementById(`${tipo}Video`);
+
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: "environment" },
+                    audio: false
+                });
+
+                video.srcObject = stream;
+                modal.style.display = "flex";
+
+                if (tipo === 'contador') {
+                    contadorStream = stream;
+                } else {
+                    inmuebleStream = stream;
+                }
+            } catch (error) {
+                console.error("Error al acceder a la cámara:", error);
+                alert("No se pudo acceder a la cámara. Asegúrate de que la cámara esté conectada y que hayas dado permiso.");
+            }
+        }
+
+        // Función para tomar una foto desde la cámara
+        function tomarFoto(tipo) {
+            const video = document.getElementById(`${tipo}Video`);
+            const preview = document.getElementById(`${tipo}Preview`);
+            const input = document.getElementById(`foto_${tipo}`);
+
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const context = canvas.getContext('2d');
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            canvas.toBlob((blob) => {
+                const file = new File([blob], `foto_${tipo}_${Date.now()}.jpg`, { type: 'image/jpeg' });
+                const dataTransfer = new DataTransfer();
+                dataTransfer.items.add(file);
+                input.files = dataTransfer.files;
+
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    preview.innerHTML = `<img src="${e.target.result}" alt="Vista previa" style="max-width: 100%; max-height: 100%;">`;
+                };
+                reader.readAsDataURL(file);
+
+                cerrarCamara(tipo);
+            }, 'image/jpeg');
+        }
+
+        // Función para cerrar la cámara
+        function cerrarCamara(tipo) {
+            const modal = document.getElementById(`${tipo}Modal`);
+            const video = document.getElementById(`${tipo}Video`);
+
+            modal.style.display = "none";
+
+            if (tipo === 'contador' && contadorStream) {
+                contadorStream.getTracks().forEach(track => track.stop());
+                contadorStream = null;
+            } else if (tipo === 'inmueble' && inmuebleStream) {
+                inmuebleStream.getTracks().forEach(track => track.stop());
+                inmuebleStream = null;
+            }
+
+            video.srcObject = null;
+        }
+
+        // Función para abrir el selector de archivos
+        function abrirArchivos(tipo) {
+            const input = document.getElementById(`foto_${tipo}`);
+            input.click();
+        }
+
+        // Función para mostrar la vista previa de la imagen
+        function mostrarVistaPrevia(event, tipo) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const preview = document.getElementById(`${tipo}Preview`);
+                    preview.innerHTML = `<img src="${e.target.result}" alt="Vista previa" style="max-width: 100%; max-height: 100%;">`;
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        // Asignar eventos a los inputs de archivo
+        document.getElementById('foto_contador').addEventListener('change', function(e) {
+            mostrarVistaPrevia(e, 'contador');
+        });
+
+        document.getElementById('foto_inmueble').addEventListener('change', function(e) {
+            mostrarVistaPrevia(e, 'inmueble');
+        });
+
+        // Asignar el manejador del formulario al cargar la página
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('lecturaForm');
+            form.addEventListener('submit', manejarEnvio);
+            // Obtener ubicación al cargar la página
+            obtenerUbicacion().catch(error => {
+                console.error("Error al obtener ubicación al cargar:", error);
+            });
+        });
+    </script>
+{% endblock %}

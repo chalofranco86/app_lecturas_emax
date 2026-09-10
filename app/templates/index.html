@@ -1,0 +1,87 @@
+<!-- templates/index.html -->
+{% extends "base.html" %}
+
+{% block title %}Buscar Inmueble{% endblock %}
+
+{% block content %}
+    <style>
+        /* Estilos específicos para index.html */
+        .container {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            width: 90%;
+            max-width: 500px;
+            margin: 20px auto;
+            text-align: center;
+        }
+
+        h1 {
+            color: #1e88e5;
+            margin-bottom: 20px;
+            font-size: 28px;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        input[type="text"] {
+            padding: 12px;
+            border: 2px solid #bbdefb;
+            border-radius: 6px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #1e88e5;
+        }
+
+        button {
+            background-color: #1e88e5;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #1565c0;
+        }
+
+        label {
+            font-weight: bold;
+            color: #424242;
+            font-size: 16px;
+            margin-bottom: 5px;
+            text-align: left;
+        }
+    </style>
+
+    <div class="container">
+        <h1>Buscar Inmueble</h1>
+        <form onsubmit="return buscarInmueble()">
+            <label for="codigo">Código del Inmueble:</label>
+            <input type="text" id="codigo" name="codigo" required placeholder="Ejemplo: 190527-2">
+            <button type="submit">Buscar</button>
+        </form>
+    </div>
+
+    <script>
+        function buscarInmueble() {
+            const codigo = document.getElementById("codigo").value;
+            if (codigo) {
+                window.location.href = `/lectura/${codigo}`;
+            }
+            return false;
+        }
+    </script>
+{% endblock %}

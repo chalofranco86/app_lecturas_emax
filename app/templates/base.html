@@ -1,0 +1,78 @@
+<!-- templates/base.html -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Sistema de Lectores de Agua{% endblock %}</title>
+    <style>
+        /* Estilos globales para el menú y el cuerpo */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f0f8ff;
+            color: #333;
+        }
+
+        /* Menú superior */
+        .navbar {
+            background-color: #1e88e5;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .navbar a {
+            color: white;
+            text-decoration: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+        }
+
+        .navbar a:hover {
+            background-color: #1565c0;
+        }
+
+        .navbar .logo {
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        .navbar .menu {
+            display: flex;
+            gap: 10px;
+        }
+
+        /* Contenido principal */
+        .content {
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Menú superior -->
+    <nav class="navbar">
+        <div class="logo">Sistema de Lectores de Agua</div>
+        <div class="menu">
+            {% if current_user.is_authenticated %}
+                <a href="{{ url_for('buscar_inmueble') }}">Home</a>
+                <a href="{{ url_for('listar_lecturas') }}">Lista de Lecturas</a>
+                <a href="{{ url_for('listar_errores') }}">Inmuebles con Errores</a>
+                <a href="{{ url_for('logout') }}">Cerrar Sesión</a>
+            {% else %}
+                <a href="{{ url_for('login') }}">Iniciar Sesión</a>
+                <a href="{{ url_for('registro') }}">Registrarse</a>
+            {% endif %}
+        </div>
+    </nav>
+
+    <!-- Contenido dinámico de cada página -->
+    <div class="content">
+        {% block content %}{% endblock %}
+    </div>
+</body>
+</html>

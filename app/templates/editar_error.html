@@ -1,0 +1,475 @@
+<!-- templates/editar_error.html -->
+{% extends "base.html" %}
+
+{% block title %}Editar Código con Error {{ error.id }}{% endblock %}
+
+{% block content %}
+    <!-- Agregar Leaflet CSS y JS para el mapa -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <div class="container">
+        <h1>Editar Código con Error #{{ error.id }}</h1>
+
+        <!-- Mensaje para mostrar las coordenadas obtenidas -->
+        <div id="coordenadas-message" style="margin-bottom: 15px; padding: 10px; background-color: #e8f5e9; border-radius: 4px; color: #2e7d32;">
+            Coordenadas: <span id="coordenadas-value">
+                {% if error.coordenada_x and error.coordenada_y %}
+                    Longitud: {{ error.coordenada_x }}, Latitud: {{ error.coordenada_y }}
+                {% else %}
+                    Obteniendo ubicación...
+                {% endif %}
+            </span>
+            <button type="button" onclick="centrarEnUbicacionActual()" style="margin-left: 10px; background-color: #1e88e5; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">
+                Actualizar Ubicación
+            </button>
+        </div>
+
+        <!-- Mapa interactivo para seleccionar ubicación -->
+        <div id="map" style="height: 300px; width: 100%; margin-bottom: 15px; border-radius: 8px; border: 2px solid #bbdefb;"></div>
+
+        <form action="{{ url_for('actualizar_error', error_id=error.id) }}" method="POST" enctype="multipart/form-data" id="errorForm">
+            <input type="hidden" name="codigo_tarjeta" value="{{ error.codigo_tarjeta }}">
+
+            <!-- Campos ocultos para coordenadas -->
+            <input type="hidden" id="coordenada_x" name="coordenada_x" value="{{ error.coordenada_x if error.coordenada_x else '' }}">
+            <input type="hidden" id="coordenada_y" name="coordenada_y" value="{{ error.coordenada_y if error.coordenada_y else '' }}">
+
+            <!-- Campo para dirección de servicio -->
+            <label for="direccion_servicio">Dirección de Servicio:</label>
+            <input type="text" id="direccion_servicio" name="direccion_servicio" value="{{ error.direccion_servicio }}" required>
+
+            <!-- Campo para ruta -->
+            <label for="ruta">Ruta:</label>
+            <input type="text" id="ruta" name="ruta" value="{{ error.ruta }}" required>
+
+            <!-- Campo para tarifa -->
+            <label for="tarifa">Tarifa:</label>
+            <input type="number" id="tarifa" name="tarifa" step="0.01" min="0" value="{{ error.tarifa }}" required>
+
+            <!-- Campo para contador de agua -->
+            <label for="contador_agua">Contador de Agua:</label>
+            <input type="text" id="contador_agua" name="contador_agua" value="{{ error.contador_agua }}" required>
+
+            <!-- Campo para observaciones -->
+            <label for="observaciones">Observaciones:</label>
+            <textarea id="observaciones" name="observaciones" rows="3" placeholder="Ejemplo: Código no encontrado en la base de datos...">{{ error.observaciones if error.observaciones else "" }}</textarea>
+
+            <h2>Fotos</h2>
+
+            <!-- Foto del Contador -->
+            <label>Foto del Contador:</label>
+            <div class="camera-container">
+                <div class="camera-preview" id="contadorPreview">
+                    {% if error.foto_contador %}
+                        {% set foto_contador_filename = error.foto_contador.split('\\')[-1] if '\\' in error.foto_contador else error.foto_contador.split('/')[-1] %}
+                        <img src="{{ url_for('static', filename='uploads/' + foto_contador_filename) }}" alt="Foto del Contador" style="max-width: 100%; max-height: 100%;">
+                    {% else %}
+                        <p>No se ha seleccionado ninguna imagen.</p>
+                    {% endif %}
+                </div>
+                <div class="camera-buttons">
+                    <button type="button" onclick="abrirCamara('contador')">Tomar Foto</button>
+                    <button type="button" onclick="abrirArchivos('contador')">Cargar Imagen</button>
+                </div>
+                <input type="file" id="foto_contador" name="foto_contador" accept="image/*" style="display: none;">
+                <input type="hidden" name="foto_contador_actual" value="{{ error.foto_contador }}">
+                <div id="contadorModal" class="modal" style="display: none;">
+                    <div class="modal-content">
+                        <video id="contadorVideo" autoplay playsinline style="width: 100%; max-height: 300px; background: #f5f5f5;"></video>
+                        <div style="display: flex; gap: 10px; margin-top: 10px;">
+                            <button type="button" onclick="tomarFoto('contador')">Tomar Foto</button>
+                            <button type="button" onclick="cerrarCamara('contador')">Cancelar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Foto del Inmueble -->
+            <label>Foto del Inmueble:</label>
+            <div class="camera-container">
+                <div class="camera-preview" id="inmueblePreview">
+                    {% if error.foto_inmueble %}
+                        {% set foto_inmueble_filename = error.foto_inmueble.split('\\')[-1] if '\\' in error.foto_inmueble else error.foto_inmueble.split('/')[-1] %}
+                        <img src="{{ url_for('static', filename='uploads/' + foto_inmueble_filename) }}" alt="Foto del Inmueble" style="max-width: 100%; max-height: 100%;">
+                    {% else %}
+                        <p>No se ha seleccionado ninguna imagen.</p>
+                    {% endif %}
+                </div>
+                <div class="camera-buttons">
+                    <button type="button" onclick="abrirCamara('inmueble')">Tomar Foto</button>
+                    <button type="button" onclick="abrirArchivos('inmueble')">Cargar Imagen</button>
+                </div>
+                <input type="file" id="foto_inmueble" name="foto_inmueble" accept="image/*" style="display: none;">
+                <input type="hidden" name="foto_inmueble_actual" value="{{ error.foto_inmueble }}">
+                <div id="inmuebleModal" class="modal" style="display: none;">
+                    <div class="modal-content">
+                        <video id="inmuebleVideo" autoplay playsinline style="width: 100%; max-height: 300px; background: #f5f5f5;"></video>
+                        <div style="display: flex; gap: 10px; margin-top: 10px;">
+                            <button type="button" onclick="tomarFoto('inmueble')">Tomar Foto</button>
+                            <button type="button" onclick="cerrarCamara('inmueble')">Cancelar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="actions">
+                <button type="submit" class="button edit">Guardar Cambios</button>
+                <a href="{{ url_for('detalle_error', error_id=error.id) }}" class="button view">Cancelar</a>
+            </div>
+        </form>
+    </div>
+
+    <style>
+        /* Estilos globales */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f8ff;
+            margin: 0;
+            padding: 0;
+            color: #333;
+        }
+
+        .container {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            width: 90%;
+            max-width: 800px;
+            margin: 20px auto;
+        }
+
+        h1, h2 {
+            color: #1e88e5;
+            margin-bottom: 15px;
+        }
+
+        h2 {
+            margin-top: 20px;
+            font-size: 20px;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        textarea,
+        input[type="file"] {
+            padding: 10px;
+            border: 2px solid #bbdefb;
+            border-radius: 6px;
+            font-size: 16px;
+            background-color: white;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .camera-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .camera-preview {
+            width: 100%;
+            max-height: 300px;
+            border: 2px dashed #bbdefb;
+            border-radius: 6px;
+            background-color: #f5f5f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        .camera-preview img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+
+        .camera-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .camera-buttons button {
+            flex: 1;
+            padding: 8px;
+            font-size: 14px;
+        }
+
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 500px;
+        }
+
+        /* Estilo para el mapa */
+        #map {
+            height: 300px;
+            width: 100%;
+            border-radius: 8px;
+            border: 2px solid #bbdefb;
+            margin-bottom: 15px;
+        }
+
+        .actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            justify-content: center;
+        }
+
+        .button {
+            padding: 10px 15px;
+            border-radius: 4px;
+            text-decoration: none;
+            font-size: 14px;
+            transition: background-color 0.3s;
+            border: none;
+            cursor: pointer;
+        }
+
+        .button.edit {
+            background-color: #2196f3;
+            color: white;
+        }
+
+        .button.view {
+            background-color: #4caf50;
+            color: white;
+        }
+
+        .button:hover {
+            opacity: 0.8;
+        }
+    </style>
+
+    <script>
+        // Variables para el stream de la cámara y el mapa
+        let contadorStream = null;
+        let inmuebleStream = null;
+        let map;
+        let marker;
+
+        // Coordenadas por defecto de Guatemala (Ciudad de Guatemala)
+        const defaultLat = 14.634915;
+        const defaultLng = -90.506882;
+
+        // Función para inicializar el mapa
+        function inicializarMapa() {
+            // Coordenadas iniciales (usar las del error si existen, sino las por defecto)
+            const initialLat = {{ error.coordenada_y if error.coordenada_y else defaultLat }};
+            const initialLng = {{ error.coordenada_x if error.coordenada_x else defaultLng }};
+
+            // Inicializar el mapa
+            map = L.map('map').setView([initialLat, initialLng], 15);
+
+            // Agregar capa de OpenStreetMap
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(map);
+
+            // Agregar un marcador
+            marker = L.marker([initialLat, initialLng], { draggable: true }).addTo(map);
+
+            // Actualizar coordenadas al mover el marcador
+            marker.on('dragend', function(event) {
+                const { lat, lng } = event.target.getLatLng();
+                document.getElementById('coordenada_x').value = lng;
+                document.getElementById('coordenada_y').value = lat;
+                document.getElementById('coordenadas-value').textContent = `Longitud: ${lng.toFixed(6)}, Latitud: ${lat.toFixed(6)} (Seleccionado manualmente)`;
+            });
+
+            // Centrar el mapa al hacer clic
+            map.on('click', function(event) {
+                const { lat, lng } = event.latlng;
+                marker.setLatLng([lat, lng]);
+                document.getElementById('coordenada_x').value = lng;
+                document.getElementById('coordenada_y').value = lat;
+                document.getElementById('coordenadas-value').textContent = `Longitud: ${lng.toFixed(6)}, Latitud: ${lat.toFixed(6)} (Seleccionado manualmente)`;
+            });
+        }
+
+        // Función para centrar el mapa en la ubicación actual (GPS)
+        async function centrarEnUbicacionActual() {
+            if (!navigator.geolocation) {
+                alert("La geolocalización no está soportada en este navegador.");
+                return;
+            }
+
+            const msgSpan = document.getElementById('coordenadas-value');
+            msgSpan.textContent = 'Obteniendo ubicación por GPS...';
+
+            try {
+                const position = await new Promise((resolve, reject) => {
+                    navigator.geolocation.getCurrentPosition(
+                        resolve,
+                        reject,
+                        {
+                            enableHighAccuracy: true,
+                            timeout: 15000,
+                            maximumAge: 0
+                        }
+                    );
+                });
+
+                const { latitude, longitude, accuracy } = position.coords;
+
+                // Validar que las coordenadas no sean inválidas
+                if (
+                    (Math.abs(longitude - 175.643965) < 0.1 && Math.abs(latitude - (-40.320663)) < 0.1) ||
+                    (Math.abs(longitude) > 180 || Math.abs(latitude) > 90)
+                ) {
+                    msgSpan.textContent = `Ubicación por GPS no válida. Usando valores por defecto.`;
+                    map.setView([defaultLat, defaultLng], 15);
+                    marker.setLatLng([defaultLat, defaultLng]);
+                    document.getElementById('coordenada_x').value = defaultLng;
+                    document.getElementById('coordenada_y').value = defaultLat;
+                } else {
+                    map.setView([latitude, longitude], 15);
+                    marker.setLatLng([latitude, longitude]);
+                    document.getElementById('coordenada_x').value = longitude;
+                    document.getElementById('coordenada_y').value = latitude;
+                    msgSpan.textContent = `Longitud: ${longitude.toFixed(6)}, Latitud: ${latitude.toFixed(6)} (GPS, Precisión: ${accuracy.toFixed(0)} m)`;
+                }
+            } catch (error) {
+                console.error("Error al obtener la ubicación por GPS:", error);
+                msgSpan.textContent = 'Error al obtener la ubicación por GPS. Usando valores por defecto.';
+                map.setView([defaultLat, defaultLng], 15);
+                marker.setLatLng([defaultLat, defaultLng]);
+                document.getElementById('coordenada_x').value = defaultLng;
+                document.getElementById('coordenada_y').value = defaultLat;
+            }
+        }
+
+        // Función para abrir la cámara
+        async function abrirCamara(tipo) {
+            try {
+                const modal = document.getElementById(`${tipo}Modal`);
+                const video = document.getElementById(`${tipo}Video`);
+
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: "environment" },
+                    audio: false
+                });
+
+                video.srcObject = stream;
+                modal.style.display = "flex";
+
+                if (tipo === 'contador') {
+                    contadorStream = stream;
+                } else {
+                    inmuebleStream = stream;
+                }
+            } catch (error) {
+                console.error("Error al acceder a la cámara:", error);
+                alert("No se pudo acceder a la cámara. Asegúrate de que la cámara esté conectada y que hayas dado permiso.");
+            }
+        }
+
+        // Función para tomar una foto desde la cámara
+        function tomarFoto(tipo) {
+            const video = document.getElementById(`${tipo}Video`);
+            const preview = document.getElementById(`${tipo}Preview`);
+            const input = document.getElementById(`foto_${tipo}`);
+
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const context = canvas.getContext('2d');
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            canvas.toBlob((blob) => {
+                const file = new File([blob], `foto_${tipo}_${Date.now()}.jpg`, { type: 'image/jpeg' });
+                const dataTransfer = new DataTransfer();
+                dataTransfer.items.add(file);
+                input.files = dataTransfer.files;
+
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    preview.innerHTML = `<img src="${e.target.result}" alt="Vista previa" style="max-width: 100%; max-height: 100%;">`;
+                };
+                reader.readAsDataURL(file);
+
+                cerrarCamara(tipo);
+            }, 'image/jpeg');
+        }
+
+        // Función para cerrar la cámara
+        function cerrarCamara(tipo) {
+            const modal = document.getElementById(`${tipo}Modal`);
+            const video = document.getElementById(`${tipo}Video`);
+
+            modal.style.display = "none";
+
+            if (tipo === 'contador' && contadorStream) {
+                contadorStream.getTracks().forEach(track => track.stop());
+                contadorStream = null;
+            } else if (tipo === 'inmueble' && inmuebleStream) {
+                inmuebleStream.getTracks().forEach(track => track.stop());
+                inmuebleStream = null;
+            }
+
+            video.srcObject = null;
+        }
+
+        // Función para abrir el selector de archivos
+        function abrirArchivos(tipo) {
+            const input = document.getElementById(`foto_${tipo}`);
+            input.click();
+        }
+
+        // Función para mostrar la vista previa de la imagen
+        function mostrarVistaPrevia(event, tipo) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const preview = document.getElementById(`${tipo}Preview`);
+                    preview.innerHTML = `<img src="${e.target.result}" alt="Vista previa" style="max-width: 100%; max-height: 100%;">`;
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        // Asignar eventos a los inputs de archivo
+        document.getElementById('foto_contador').addEventListener('change', function(e) {
+            mostrarVistaPrevia(e, 'contador');
+        });
+
+        document.getElementById('foto_inmueble').addEventListener('change', function(e) {
+            mostrarVistaPrevia(e, 'inmueble');
+        });
+
+        // Inicializar el mapa al cargar la página
+        document.addEventListener('DOMContentLoaded', function() {
+            inicializarMapa();
+        });
+    </script>
+{% endblock %}

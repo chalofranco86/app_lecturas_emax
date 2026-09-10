@@ -1,0 +1,393 @@
+<!-- templates/editar_lectura.html -->
+{% extends "base.html" %}
+
+{% block title %}Editar Lectura {{ lectura.id }}{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <h1>Editar Lectura #{{ lectura.id }}</h1>
+
+        <form action="{{ url_for('actualizar_lectura', lectura_id=lectura.id) }}" method="POST" enctype="multipart/form-data">
+            <input type="hidden" name="codigo_inmueble" value="{{ lectura.codigo_tarjeta }}">
+
+            <!-- Campos ocultos para coordenadas -->
+            <input type="hidden" id="coordenada_x" name="coordenada_x" value="{{ lectura.coordenada_x if lectura.coordenada_x else '' }}">
+            <input type="hidden" id="coordenada_y" name="coordenada_y" value="{{ lectura.coordenada_y if lectura.coordenada_y else '' }}">
+
+            <div class="lectura-info">
+                <p><strong>Código de Inmueble:</strong> {{ lectura.codigo_tarjeta }}</p>
+                <p><strong>Nombre del Inmueble:</strong> {{ lectura.nombre_inmueble }}</p>
+                <p><strong>Dirección:</strong> {{ lectura.direccion }}</p>
+                <p><strong>Usuario:</strong> {{ lectura.nombre_usuario }}</p>
+                <p><strong>Fecha de Lectura:</strong> {{ lectura.fecha_lectura }}</p>
+            </div>
+
+            <h2>Datos de Lectura</h2>
+
+            <!-- Campo para la lectura -->
+            <label for="lectura">Lectura (6 dígitos máx.):</label>
+            <input type="number" id="lectura" name="lectura" min="0" max="999999" value="{{ lectura.lectura }}" required>
+
+            <!-- Campo para observaciones -->
+            <label for="observacion">Observación:</label>
+            <textarea id="observacion" name="observacion" rows="3" placeholder="Ejemplo: Contador dañado, lectura estimada...">{{ lectura.observacion if lectura.observacion else "" }}</textarea>
+
+            <!-- Campo para mes de proceso -->
+            <label for="mes_proceso">Mes de Proceso:</label>
+            <input type="text" id="mes_proceso" name="mes_proceso" placeholder="Ejemplo: Enero 2026, 01-2026, 1" value="{{ lectura.mes_proceso }}" required>
+
+            <!-- Botón para actualizar coordenadas -->
+            <button type="button" onclick="obtenerUbicacion()" class="button edit">Actualizar Coordenadas</button>
+
+            <!-- Mostrar coordenadas actuales (opcional) -->
+            <div class="coordenadas-info">
+                <p><strong>Coordenada X (Longitud):</strong> <span id="coordenadaXValue">{{ lectura.coordenada_x if lectura.coordenada_x else "No disponible" }}</span></p>
+                <p><strong>Coordenada Y (Latitud):</strong> <span id="coordenadaYValue">{{ lectura.coordenada_y if lectura.coordenada_y else "No disponible" }}</span></p>
+            </div>
+
+            <h2>Fotos</h2>
+
+            <!-- Foto del Contador -->
+            <label>Foto del Contador:</label>
+            <div class="camera-container">
+                <div class="camera-preview" id="contadorPreview">
+                    {% if lectura.foto_contador %}
+                        {% set foto_contador_filename = lectura.foto_contador.split('\\')[-1] if '\\' in lectura.foto_contador else lectura.foto_contador.split('/')[-1] %}
+                        <img src="{{ url_for('static', filename='uploads/' + foto_contador_filename) }}" alt="Foto del Contador" style="max-width: 100%; max-height: 100%;">
+                    {% else %}
+                        <p>No se ha seleccionado ninguna imagen.</p>
+                    {% endif %}
+                </div>
+                <div class="camera-buttons">
+                    <button type="button" onclick="abrirCamara('contador')">Tomar Foto</button>
+                    <button type="button" onclick="abrirArchivos('contador')">Cargar Imagen</button>
+                </div>
+                <input type="file" id="foto_contador" name="foto_contador" accept="image/*" style="display: none;">
+                <input type="hidden" name="foto_contador_actual" value="{{ lectura.foto_contador }}">
+                <div id="contadorModal" class="modal" style="display: none;">
+                    <div class="modal-content">
+                        <video id="contadorVideo" autoplay playsinline style="width: 100%; max-height: 300px; background: #f5f5f5;"></video>
+                        <div style="display: flex; gap: 10px; margin-top: 10px;">
+                            <button type="button" onclick="tomarFoto('contador')">Tomar Foto</button>
+                            <button type="button" onclick="cerrarCamara('contador')">Cancelar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Foto del Inmueble -->
+            <label>Foto del Inmueble:</label>
+            <div class="camera-container">
+                <div class="camera-preview" id="inmueblePreview">
+                    {% if lectura.foto_inmueble %}
+                        {% set foto_inmueble_filename = lectura.foto_inmueble.split('\\')[-1] if '\\' in lectura.foto_inmueble else lectura.foto_inmueble.split('/')[-1] %}
+                        <img src="{{ url_for('static', filename='uploads/' + foto_inmueble_filename) }}" alt="Foto del Inmueble" style="max-width: 100%; max-height: 100%;">
+                    {% else %}
+                        <p>No se ha seleccionado ninguna imagen.</p>
+                    {% endif %}
+                </div>
+                <div class="camera-buttons">
+                    <button type="button" onclick="abrirCamara('inmueble')">Tomar Foto</button>
+                    <button type="button" onclick="abrirArchivos('inmueble')">Cargar Imagen</button>
+                </div>
+                <input type="file" id="foto_inmueble" name="foto_inmueble" accept="image/*" style="display: none;">
+                <input type="hidden" name="foto_inmueble_actual" value="{{ lectura.foto_inmueble }}">
+                <div id="inmuebleModal" class="modal" style="display: none;">
+                    <div class="modal-content">
+                        <video id="inmuebleVideo" autoplay playsinline style="width: 100%; max-height: 300px; background: #f5f5f5;"></video>
+                        <div style="display: flex; gap: 10px; margin-top: 10px;">
+                            <button type="button" onclick="tomarFoto('inmueble')">Tomar Foto</button>
+                            <button type="button" onclick="cerrarCamara('inmueble')">Cancelar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="actions">
+                <button type="submit" class="button edit">Guardar Cambios</button>
+                <a href="{{ url_for('detalle_lectura', lectura_id=lectura.id) }}" class="button view">Cancelar</a>
+            </div>
+        </form>
+    </div>
+
+    <style>
+        .container {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            width: 90%;
+            max-width: 800px;
+            margin: 20px auto;
+        }
+
+        h1, h2 {
+            color: #1e88e5;
+            margin-bottom: 15px;
+        }
+
+        h2 {
+            margin-top: 20px;
+            font-size: 20px;
+        }
+
+        .lectura-info {
+            background-color: #e3f2fd;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .lectura-info p, .coordenadas-info p {
+            margin: 8px 0;
+            font-size: 16px;
+        }
+
+        .lectura-info strong, .coordenadas-info strong {
+            color: #1565c0;
+        }
+
+        .coordenadas-info {
+            background-color: #fff3e0; /* Fondo naranja claro */
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 15px;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        input[type="number"],
+        input[type="text"],
+        textarea {
+            padding: 10px;
+            border: 2px solid #bbdefb;
+            border-radius: 6px;
+            font-size: 16px;
+            background-color: white;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .camera-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .camera-preview {
+            width: 100%;
+            max-height: 300px;
+            border: 2px dashed #bbdefb;
+            border-radius: 6px;
+            background-color: #f5f5f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        .camera-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .camera-buttons button {
+            flex: 1;
+            padding: 8px;
+            font-size: 14px;
+        }
+
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 500px;
+        }
+
+        .actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            justify-content: center;
+        }
+
+        .button {
+            padding: 10px 15px;
+            border-radius: 4px;
+            text-decoration: none;
+            font-size: 14px;
+            transition: background-color 0.3s;
+            border: none;
+            cursor: pointer;
+        }
+
+        .button.edit {
+            background-color: #2196f3;
+            color: white;
+        }
+
+        .button.view {
+            background-color: #4caf50;
+            color: white;
+        }
+
+        .button:hover {
+            opacity: 0.8;
+        }
+    </style>
+
+    <script>
+        // Variables para almacenar el stream de la cámara
+        let contadorStream = null;
+        let inmuebleStream = null;
+
+        // Función para obtener la ubicación del dispositivo
+        function obtenerUbicacion() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    function(position) {
+                        const coordenadaX = position.coords.longitude;
+                        const coordenadaY = position.coords.latitude;
+
+                        document.getElementById('coordenada_x').value = coordenadaX;
+                        document.getElementById('coordenada_y').value = coordenadaY;
+
+                        // Actualizar los valores mostrados en el template
+                        document.getElementById('coordenadaXValue').textContent = coordenadaX;
+                        document.getElementById('coordenadaYValue').textContent = coordenadaY;
+
+                        alert("Coordenadas actualizadas: Longitud = " + coordenadaX + ", Latitud = " + coordenadaY);
+                    },
+                    function(error) {
+                        console.error("Error al obtener la ubicación:", error);
+                        alert("No se pudo obtener la ubicación. Asegúrate de que los servicios de ubicación estén activados.");
+                    },
+                    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+                );
+            } else {
+                alert("La geolocalización no está soportada en este navegador.");
+            }
+        }
+
+        // Función para abrir la cámara
+        async function abrirCamara(tipo) {
+            try {
+                const modal = document.getElementById(`${tipo}Modal`);
+                const video = document.getElementById(`${tipo}Video`);
+
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: "environment" },
+                    audio: false
+                });
+
+                video.srcObject = stream;
+                modal.style.display = "flex";
+
+                if (tipo === 'contador') {
+                    contadorStream = stream;
+                } else {
+                    inmuebleStream = stream;
+                }
+            } catch (error) {
+                console.error("Error al acceder a la cámara:", error);
+                alert("No se pudo acceder a la cámara. Asegúrate de que la cámara esté conectada y que hayas dado permiso.");
+            }
+        }
+
+        // Función para tomar una foto desde la cámara
+        function tomarFoto(tipo) {
+            const video = document.getElementById(`${tipo}Video`);
+            const preview = document.getElementById(`${tipo}Preview`);
+            const input = document.getElementById(`foto_${tipo}`);
+
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const context = canvas.getContext('2d');
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            canvas.toBlob((blob) => {
+                const file = new File([blob], `foto_${tipo}_${Date.now()}.jpg`, { type: 'image/jpeg' });
+                const dataTransfer = new DataTransfer();
+                dataTransfer.items.add(file);
+                input.files = dataTransfer.files;
+
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    preview.innerHTML = `<img src="${e.target.result}" alt="Vista previa" style="max-width: 100%; max-height: 100%;">`;
+                };
+                reader.readAsDataURL(file);
+
+                cerrarCamara(tipo);
+            }, 'image/jpeg');
+        }
+
+        // Función para cerrar la cámara
+        function cerrarCamara(tipo) {
+            const modal = document.getElementById(`${tipo}Modal`);
+            const video = document.getElementById(`${tipo}Video`);
+
+            modal.style.display = "none";
+
+            if (tipo === 'contador' && contadorStream) {
+                contadorStream.getTracks().forEach(track => track.stop());
+                contadorStream = null;
+            } else if (tipo === 'inmueble' && inmuebleStream) {
+                inmuebleStream.getTracks().forEach(track => track.stop());
+                inmuebleStream = null;
+            }
+
+            video.srcObject = null;
+        }
+
+        // Función para abrir el selector de archivos
+        function abrirArchivos(tipo) {
+            const input = document.getElementById(`foto_${tipo}`);
+            input.click();
+        }
+
+        // Función para mostrar la vista previa de la imagen
+        function mostrarVistaPrevia(event, tipo) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const preview = document.getElementById(`${tipo}Preview`);
+                    preview.innerHTML = `<img src="${e.target.result}" alt="Vista previa" style="max-width: 100%; max-height: 100%;">`;
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        // Asignar eventos a los inputs de archivo
+        document.getElementById('foto_contador').addEventListener('change', function(e) {
+            mostrarVistaPrevia(e, 'contador');
+        });
+
+        document.getElementById('foto_inmueble').addEventListener('change', function(e) {
+            mostrarVistaPrevia(e, 'inmueble');
+        });
+    </script>
+{% endblock %}
