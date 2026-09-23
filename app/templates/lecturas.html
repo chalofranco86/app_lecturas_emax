@@ -16,7 +16,7 @@
 
         <!-- Buscador de código de inmueble -->
         <div class="search-container">
-            <form action="{{ url_for('listar_lecturas') }}" method="GET" class="search-form">
+            <form action="{{ url_for('lecturas.listar_lecturas') }}" method="GET" class="search-form">
                 <input
                     type="text"
                     name="codigo_inmueble"
@@ -24,7 +24,7 @@
                     value="{{ request.args.get('codigo_inmueble', '') }}"
                 >
                 <button type="submit" class="button search">Buscar</button>
-                <a href="{{ url_for('listar_lecturas') }}" class="button clear">Limpiar</a>
+                <a href="{{ url_for('lecturas.listar_lecturas') }}" class="button clear">Limpiar</a>
             </form>
         </div>
 
@@ -48,9 +48,9 @@
                             <td>{{ lectura.nombre_usuario }}</td>
                             <td>{{ lectura.fecha_lectura }}</td>
                             <td>
-                                <a href="{{ url_for('detalle_lectura', lectura_id=lectura.id) }}" class="button view">Ver</a>
-                                <a href="{{ url_for('editar_lectura', lectura_id=lectura.id) }}" class="button edit">Editar</a>
-                                <a href="{{ url_for('eliminar_lectura', lectura_id=lectura.id) }}" class="button delete" onclick="return confirm('¿Estás seguro de que quieres eliminar esta lectura?')">Eliminar</a>
+                                <a href="{{ url_for('lecturas.detalle_lectura', lectura_id=lectura.id) }}" class="button view">Ver</a>
+                                <a href="{{ url_for('lecturas.editar_lectura', lectura_id=lectura.id) }}" class="button edit">Editar</a>
+                                <a href="{{ url_for('lecturas.eliminar_lectura', lectura_id=lectura.id) }}" class="button delete" onclick="return confirm('¿Estás seguro de que quieres eliminar esta lectura?')">Eliminar</a>
                             </td>
                         </tr>
                     {% endfor %}

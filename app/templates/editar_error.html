@@ -28,7 +28,7 @@
         <!-- Mapa interactivo para seleccionar ubicación -->
         <div id="map" style="height: 300px; width: 100%; margin-bottom: 15px; border-radius: 8px; border: 2px solid #bbdefb;"></div>
 
-        <form action="{{ url_for('actualizar_error', error_id=error.id) }}" method="POST" enctype="multipart/form-data" id="errorForm">
+        <form action="{{ url_for('errores.actualizar_error', error_id=error.id) }}" method="POST" enctype="multipart/form-data" id="errorForm">
             <input type="hidden" name="codigo_tarjeta" value="{{ error.codigo_tarjeta }}">
 
             <!-- Campos ocultos para coordenadas -->
@@ -61,11 +61,19 @@
             <label>Foto del Contador:</label>
             <div class="camera-container">
                 <div class="camera-preview" id="contadorPreview">
-                    {% if error.foto_contador %}
-                        {% set foto_contador_filename = error.foto_contador.split('\\')[-1] if '\\' in error.foto_contador else error.foto_contador.split('/')[-1] %}
-                        <img src="{{ url_for('static', filename='uploads/' + foto_contador_filename) }}" alt="Foto del Contador" style="max-width: 100%; max-height: 100%;">
+                    {% set foto_contador = error.foto_contador or '' %}
+                    
+                    {% if foto_contador and foto_contador|lower not in ['none', 'null'] %}
+                        {% set foto_contador_filename = (
+                    foto_contador|replace('\\', '/')
+                    ).split('/')[-1] %}
+                    
+                    <img src="{{ url_for(
+                                'static',
+                                filename='uploads/' + foto_contador_filename
+                            ) }}" alt="Foto del Contador" style="max-width: 100%; max-height: 100%;">
                     {% else %}
-                        <p>No se ha seleccionado ninguna imagen.</p>
+                    <p>Este registro no tiene fotografía del contador.</p>
                     {% endif %}
                 </div>
                 <div class="camera-buttons">
@@ -73,7 +81,7 @@
                     <button type="button" onclick="abrirArchivos('contador')">Cargar Imagen</button>
                 </div>
                 <input type="file" id="foto_contador" name="foto_contador" accept="image/*" style="display: none;">
-                <input type="hidden" name="foto_contador_actual" value="{{ error.foto_contador }}">
+                <input type="hidden" name="foto_contador_actual" value="{{ error.foto_contador or '' }}">
                 <div id="contadorModal" class="modal" style="display: none;">
                     <div class="modal-content">
                         <video id="contadorVideo" autoplay playsinline style="width: 100%; max-height: 300px; background: #f5f5f5;"></video>
@@ -89,11 +97,19 @@
             <label>Foto del Inmueble:</label>
             <div class="camera-container">
                 <div class="camera-preview" id="inmueblePreview">
-                    {% if error.foto_inmueble %}
-                        {% set foto_inmueble_filename = error.foto_inmueble.split('\\')[-1] if '\\' in error.foto_inmueble else error.foto_inmueble.split('/')[-1] %}
-                        <img src="{{ url_for('static', filename='uploads/' + foto_inmueble_filename) }}" alt="Foto del Inmueble" style="max-width: 100%; max-height: 100%;">
+                    {% set foto_inmueble = error.foto_inmueble or '' %}
+                    
+                    {% if foto_inmueble and foto_inmueble|lower not in ['none', 'null'] %}
+                        {% set foto_inmueble_filename = (
+                    foto_inmueble|replace('\\', '/')
+                    ).split('/')[-1] %}
+                    
+                    <img src="{{ url_for(
+                                'static',
+                                filename='uploads/' + foto_inmueble_filename
+                            ) }}" alt="Foto del Inmueble" style="max-width: 100%; max-height: 100%;">
                     {% else %}
-                        <p>No se ha seleccionado ninguna imagen.</p>
+                    <p>Este registro no tiene fotografía del inmueble.</p>
                     {% endif %}
                 </div>
                 <div class="camera-buttons">
@@ -101,7 +117,7 @@
                     <button type="button" onclick="abrirArchivos('inmueble')">Cargar Imagen</button>
                 </div>
                 <input type="file" id="foto_inmueble" name="foto_inmueble" accept="image/*" style="display: none;">
-                <input type="hidden" name="foto_inmueble_actual" value="{{ error.foto_inmueble }}">
+                <input type="hidden" name="foto_inmueble_actual" value="{{ error.foto_inmueble or '' }}">
                 <div id="inmuebleModal" class="modal" style="display: none;">
                     <div class="modal-content">
                         <video id="inmuebleVideo" autoplay playsinline style="width: 100%; max-height: 300px; background: #f5f5f5;"></video>
@@ -115,7 +131,7 @@
 
             <div class="actions">
                 <button type="submit" class="button edit">Guardar Cambios</button>
-                <a href="{{ url_for('detalle_error', error_id=error.id) }}" class="button view">Cancelar</a>
+                <a href="{{ url_for('errores.detalle_error', error_id=error.id) }}" class="button view">Cancelar</a>
             </div>
         </form>
     </div>

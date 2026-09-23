@@ -16,7 +16,7 @@
 
         <!-- Buscador de códigos con errores -->
         <div class="search-container">
-            <form action="{{ url_for('listar_errores') }}" method="GET" class="search-form">
+            <form action="{{ url_for('errores.listar_errores') }}" method="GET" class="search-form">
                 <input
                     type="text"
                     name="codigo_tarjeta"
@@ -24,7 +24,7 @@
                     value="{{ request.args.get('codigo_tarjeta', '') }}"
                 >
                 <button type="submit" class="button search">Buscar</button>
-                <a href="{{ url_for('listar_errores') }}" class="button clear">Limpiar</a>
+                <a href="{{ url_for('errores.listar_errores') }}" class="button clear">Limpiar</a>
             </form>
         </div>
 
@@ -71,9 +71,9 @@
                             <td>{{ error.fecha_registro }}</td>
                             <td>{{ error.nombre_usuario }}</td>
                             <td>
-                                <a href="{{ url_for('detalle_error', error_id=error.id) }}" class="button view">Ver</a>
-                                <a href="{{ url_for('editar_error', error_id=error.id) }}" class="button edit">Editar</a>
-                                <a href="{{ url_for('eliminar_error', error_id=error.id) }}" class="button delete" onclick="return confirm('¿Estás seguro de que quieres eliminar este registro?')">Eliminar</a>
+                                <a href="{{ url_for('errores.detalle_error', error_id=error.id) }}" class="button view">Ver</a>
+                                <a href="{{ url_for('errores.editar_error', error_id=error.id) }}" class="button edit">Editar</a>
+                                <a href="{{ url_for('errores.eliminar_error', error_id=error.id) }}" class="button delete" onclick="return confirm('¿Estás seguro de que quieres eliminar este registro?')">Eliminar</a>
                             </td>
                         </tr>
                     {% endfor %}

@@ -37,29 +37,49 @@
         <div class="fotos-container">
             <div class="foto">
                 <h3>Foto del Contador</h3>
-                {% if error.foto_contador %}
-                    {% set foto_contador_filename = error.foto_contador.split('\\')[-1] if '\\' in error.foto_contador else error.foto_contador.split('/')[-1] %}
-                    <img src="{{ url_for('static', filename='uploads/' + foto_contador_filename) }}" alt="Foto del Contador" class="foto-img">
+                {% set foto_contador = error.foto_contador or '' %}
+                
+                {% if foto_contador and foto_contador|lower not in ['none', 'null'] %}
+                    {% set foto_contador_filename = (
+                        foto_contador|replace('\\', '/')
+                ).split('/')[-1] %}
+                
+                <img src="{{ url_for(
+                            'static',
+                            filename='uploads/' + foto_contador_filename
+                        ) }}" alt="Foto del Contador" class="foto-img">
                 {% else %}
-                    <p>No hay foto del contador.</p>
+                <p class="sin-fotografia">
+                    Sin fotografía del contador
+                </p>
                 {% endif %}
             </div>
 
             <div class="foto">
                 <h3>Foto del Inmueble</h3>
-                {% if error.foto_inmueble %}
-                    {% set foto_inmueble_filename = error.foto_inmueble.split('\\')[-1] if '\\' in error.foto_inmueble else error.foto_inmueble.split('/')[-1] %}
-                    <img src="{{ url_for('static', filename='uploads/' + foto_inmueble_filename) }}" alt="Foto del Inmueble" class="foto-img">
+                {% set foto_inmueble = error.foto_inmueble or '' %}
+                
+                {% if foto_inmueble and foto_inmueble|lower not in ['none', 'null'] %}
+                    {% set foto_inmueble_filename = (
+                        foto_inmueble|replace('\\', '/')
+                ).split('/')[-1] %}
+                
+                <img src="{{ url_for(
+                            'static',
+                            filename='uploads/' + foto_inmueble_filename
+                        ) }}" alt="Foto del Inmueble" class="foto-img">
                 {% else %}
-                    <p>No hay foto del inmueble.</p>
+                <p class="sin-fotografia">
+                    Sin fotografía del inmueble
+                </p>
                 {% endif %}
             </div>
         </div>
 
         <div class="actions">
-            <a href="{{ url_for('editar_error', error_id=error.id) }}" class="button edit">Editar</a>
-            <a href="{{ url_for('eliminar_error', error_id=error.id) }}" class="button delete" onclick="return confirm('¿Estás seguro de que quieres eliminar este registro?')">Eliminar</a>
-            <a href="{{ url_for('listar_errores') }}" class="button view">Volver a la Lista</a>
+            <a href="{{ url_for('errores.editar_error', error_id=error.id) }}" class="button edit">Editar</a>
+            <a href="{{ url_for('errores.eliminar_error', error_id=error.id) }}" class="button delete" onclick="return confirm('¿Estás seguro de que quieres eliminar este registro?')">Eliminar</a>
+            <a href="{{ url_for('errores.listar_errores') }}" class="button view">Volver a la Lista</a>
         </div>
     </div>
 

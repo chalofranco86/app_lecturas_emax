@@ -59,13 +59,13 @@
         <div class="logo">Sistema de Lectores de Agua</div>
         <div class="menu">
             {% if current_user.is_authenticated %}
-                <a href="{{ url_for('buscar_inmueble') }}">Home</a>
-                <a href="{{ url_for('listar_lecturas') }}">Lista de Lecturas</a>
-                <a href="{{ url_for('listar_errores') }}">Inmuebles con Errores</a>
-                <a href="{{ url_for('logout') }}">Cerrar Sesión</a>
+                <a href="{{ url_for('dashboard.buscar_inmueble') }}">Home</a>
+                <a href="{{ url_for('lecturas.listar_lecturas') }}">Lista de Lecturas</a>
+                <a href="{{ url_for('errores.listar_errores') }}">Inmuebles con Errores</a>
+                <a href="{{ url_for('auth.logout') }}">Cerrar Sesión</a>
             {% else %}
-                <a href="{{ url_for('login') }}">Iniciar Sesión</a>
-                <a href="{{ url_for('registro') }}">Registrarse</a>
+                <a href="{{ url_for('auth.login') }}">Iniciar Sesión</a>
+                <a href="{{ url_for('auth.registro') }}">Registrarse</a>
             {% endif %}
         </div>
     </nav>

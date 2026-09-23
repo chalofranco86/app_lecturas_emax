@@ -102,7 +102,7 @@
         {% if error %}
             <p class="error-message">{{ error }}</p>
         {% endif %}
-        <form action="/registro" method="POST">
+        <form action="{{ url_for('auth.registro') }}" method="POST">
             <label for="nombre">Nombre:</label>
             <input type="text" id="nombre" name="nombre" required>
 
@@ -123,7 +123,8 @@
             <button type="submit">Registrarse</button>
         </form>
         <p class="login-link">
-            ¿Ya tienes una cuenta? <a href="/login">Inicia sesión aquí</a>
+            ¿Ya tienes una cuenta?
+            <a href="{{ url_for('auth.login') }}">Inicia sesión aquí</a>
         </p>
     </div>
 </body>

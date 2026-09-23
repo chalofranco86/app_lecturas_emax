@@ -57,9 +57,9 @@
         {% endif %}
 
         <div class="actions">
-            <a href="{{ url_for('editar_lectura', lectura_id=lectura.id) }}" class="button edit">Editar</a>
-            <a href="{{ url_for('eliminar_lectura', lectura_id=lectura.id) }}" class="button delete" onclick="return confirm('¿Estás seguro de que quieres eliminar esta lectura?')">Eliminar</a>
-            <a href="{{ url_for('listar_lecturas') }}" class="button view">Volver a la Lista</a>
+            <a href="{{ url_for('lecturas.editar_lectura', lectura_id=lectura.id) }}" class="button edit">Editar</a>
+            <a href="{{ url_for('lecturas.eliminar_lectura', lectura_id=lectura.id) }}" class="button delete" onclick="return confirm('¿Estás seguro de que quieres eliminar esta lectura?')">Eliminar</a>
+            <a href="{{ url_for('lecturas.listar_lecturas') }}" class="button view">Volver a la Lista</a>
         </div>
     </div>
 

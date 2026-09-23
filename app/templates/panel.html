@@ -85,8 +85,8 @@
         </div>
         <div class="actions">
             <!-- Usa url_for para generar la ruta dinámicamente -->
-            <a href="{{ url_for('buscar_inmueble') }}">Buscar Inmueble</a>
-            <a href="{{ url_for('logout') }}">Cerrar Sesión</a>
+            <a href="{{ url_for('dashboard.buscar_inmueble') }}">Buscar Inmueble</a>
+            <a href="{{ url_for('auth.logout') }}">Cerrar Sesión</a>
         </div>
     </div>
     {% endblock %}
