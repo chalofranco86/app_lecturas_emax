@@ -73,6 +73,11 @@
             <input type="text" id="codigo" name="codigo" required placeholder="Ejemplo: 190527-2">
             <button type="submit">Buscar</button>
         </form>
+        <form onsubmit="return buscarInmueblePorNit()">
+            <label for="nit">Contador EMAX:</label>
+            <input type="text" id="nit" name="nit" required placeholder="Ingrese el contador">
+            <button type="submit">Buscar por Contador</button>
+        </form>
     </div>
 
     <script>
@@ -80,6 +85,14 @@
             const codigo = document.getElementById("codigo").value;
             if (codigo) {
                 window.location.href = `/lectura/${codigo}`;
+            }
+            return false;
+        }
+
+        function buscarInmueblePorNit() {
+            const nit = document.getElementById("nit").value.trim();
+            if (nit) {
+                window.location.href = `/lectura/nit/${encodeURIComponent(nit)}`;
             }
             return false;
         }
