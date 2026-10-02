@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>EMAX - Captura de campo</title>
+
+    <link rel="stylesheet" href="{{ url_for(
+            'static',
+            filename='css/pwa/captura.css'
+        ) }}">
+
+    <style>
+        .camera-dialog {
+            width: min(92vw, 720px);
+            padding: 0;
+            border: 0;
+            border-radius: 16px;
+            overflow: hidden;
+        }
+
+        .camera-dialog::backdrop {
+            background: rgba(15, 23, 42, 0.78);
+        }
+
+        .camera-container {
+            display: grid;
+            gap: 1rem;
+            padding: 1rem;
+            background: #ffffff;
+        }
+
+        .camera-preview {
+            display: block;
+            width: 100%;
+            max-height: 65vh;
+            border-radius: 12px;
+            background: #0f172a;
+            object-fit: contain;
+        }
+
+        .camera-actions {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0.75rem;
+        }
+
+        .camera-message {
+            min-height: 1.5rem;
+            margin: 0;
+            color: #475569;
+        }
+
+        @media (max-width: 520px) {
+            .camera-actions {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <header class="app-header">
+        <div>
+            <h1>EMAX Campo</h1>
+            <p>Captura de lecturas</p>
+        </div>
+
+        <span id="connection-badge" class="status-badge">
+            Comprobando…
+        </span>
+    </header>
+
+    <main class="app-content">
+        <section class="card">
+            <h2>Aplicación de captura</h2>
+
+            <p>
+                La interfaz está disponible en este dispositivo,
+                incluso cuando no existe conexión.
+            </p>
+
+            <div class="pending-panel">
+                <span>Registros pendientes</span>
+                <strong id="pending-count">0</strong>
+            </div>
+
+            <button id="sync-button" class="primary-button" type="button">
+                Sincronizar ahora
+            </button>
+
+            <p id="sync-message" class="sync-message" aria-live="polite"></p>
+        </section>
+
+        <section class="card next-module">
+            <section class="card">
+                <h2>Buscar inmueble</h2>
+
+                <form id="inmueble-search-form" class="search-form">
+                    <label for="codigo-inmueble">
+                        Código de tarjeta
+                    </label>
+
+                    <input id="codigo-inmueble" name="codigo_inmueble" type="text" autocomplete="off" required
+                        placeholder="Ejemplo: 000107-2">
+
+                    <button id="search-button" class="primary-button" type="submit">
+                        Buscar inmueble
+                    </button>
+                </form>
+
+                <p id="search-message" class="search-message" aria-live="polite"></p>
+
+                <article id="inmueble-result" class="inmueble-result" hidden>
+                    <section id="lectura-section" class="capture-section" hidden>
+                        <h3>Registrar lectura</h3>
+
+                        <p>
+                            Inmueble:
+                            <strong id="lectura-inmueble-code"></strong>
+                        </p>
+
+                        <form id="lectura-form" class="capture-form">
+                            <label for="lectura-value">
+                                Lectura
+                            </label>
+
+                            <input id="lectura-value" name="lectura" type="number" min="0" inputmode="numeric"
+                                placeholder="Valor del contador">
+
+                            <label for="mes-proceso">
+                                Mes de proceso
+                            </label>
+
+                            <input id="mes-proceso" name="mes_proceso" type="text" required placeholder="202610">
+
+                            <label for="lectura-observacion">
+                                Observación
+                            </label>
+
+                            <textarea id="lectura-observacion" name="observacion" rows="3"
+                                placeholder="Observación opcional"></textarea>
+
+                            <div class="photo-field">
+                                <span class="photo-title">
+                                    Fotografía del contador
+                                </span>
+
+                                <div class="photo-actions">
+                                    <button id="open-contador-camera" type="button" class="photo-option">
+                                        📷 Tomar foto
+                                    </button>
+
+                                    <label for="foto-contador" class="photo-option secondary">
+                                        🖼️ Elegir archivo
+                                    </label>
+
+                                    <input type="file" id="foto-contador" class="visually-hidden" accept="image/*">
+                                </div>
+
+                                <p id="foto-contador-status" class="photo-status">
+                                    Ninguna fotografía seleccionada
+                                </p>
+                            </div>
+
+                            <div class="photo-field">
+                                <span class="photo-title">
+                                    Fotografía del inmueble
+                                </span>
+
+                                <div class="photo-actions">
+                                    <button id="open-inmueble-camera" type="button" class="photo-option">
+                                        📷 Tomar foto
+                                    </button>
+
+                                    <label for="foto-inmueble" class="photo-option secondary">
+                                        🖼️ Elegir archivo
+                                    </label>
+
+                                    <input type="file" id="foto-inmueble" class="visually-hidden" accept="image/*">
+                                </div>
+
+                                <p id="foto-inmueble-status" class="photo-status">
+                                    Ninguna fotografía seleccionada
+                                </p>
+                            </div>
+
+                            <button id="location-button" class="secondary-button" type="button">
+                                Obtener ubicación
+                            </button>
+
+                            <div class="coordinates">
+                                <label for="coordenada-x">
+                                    Longitud
+                                </label>
+
+                                <input id="coordenada-x" name="coordenada_x" type="text" readonly required>
+
+                                <label for="coordenada-y">
+                                    Latitud
+                                </label>
+
+                                <input id="coordenada-y" name="coordenada_y" type="text" readonly required>
+                            </div>
+
+                            <button id="save-lectura-button" class="primary-button" type="submit">
+                                Guardar lectura
+                            </button>
+                        </form>
+
+                        <p id="capture-message" class="capture-message" aria-live="polite"></p>
+                    </section>
+                    <div class="result-header">
+                        <h3 id="inmueble-name"></h3>
+
+                        <span id="result-source" class="source-badge"></span>
+                    </div>
+
+                    <dl class="inmueble-data">
+                        <div>
+                            <dt>Código</dt>
+                            <dd id="inmueble-code"></dd>
+                        </div>
+
+                        <div>
+                            <dt>Dirección</dt>
+                            <dd id="inmueble-address"></dd>
+                        </div>
+
+                        <div>
+                            <dt>Tipo</dt>
+                            <dd id="inmueble-type"></dd>
+                        </div>
+
+                        <div>
+                            <dt>Ruta</dt>
+                            <dd id="inmueble-route"></dd>
+                        </div>
+
+                        <div>
+                            <dt>NIM</dt>
+                            <dd id="inmueble-nim"></dd>
+                        </div>
+
+                        <div>
+                            <dt>NIT</dt>
+                            <dd id="inmueble-nit"></dd>
+                        </div>
+                    </dl>
+                    <div id="operation-selector" class="operation-selector" hidden>
+                        <button id="show-lectura-button" class="primary-button" type="button">
+                            Registrar lectura
+                        </button>
+                    
+                        <button id="show-error-button" class="secondary-button" type="button">
+                            Reportar error
+                        </button>
+                    </div>
+                </article>
+                <section id="error-section" class="capture-section" hidden>
+                    <h3>Registrar inmueble con error</h3>
+                
+                    <p id="error-verification-message" class="verification-message"></p>
+                
+                    <form id="error-form" class="capture-form">
+                        <label for="error-codigo-tarjeta">
+                            Código de tarjeta
+                        </label>
+                
+                        <input id="error-codigo-tarjeta" name="codigo_tarjeta" type="text" readonly required>
+                
+                        <label for="error-direccion-servicio">
+                            Dirección del servicio
+                        </label>
+                
+                        <input id="error-direccion-servicio" name="direccion_servicio" type="text" placeholder="Dirección del inmueble">
+                
+                        <label for="error-ruta">
+                            Ruta
+                        </label>
+                
+                        <input id="error-ruta" name="ruta" type="text" placeholder="Ruta opcional">
+                
+                        <label for="error-tarifa">
+                            Tarifa
+                        </label>
+                
+                        <input id="error-tarifa" name="tarifa" type="number" min="0" step="0.01" inputmode="decimal"
+                            placeholder="Tarifa opcional">
+                
+                        <label for="error-contador-agua">
+                            Número de contador
+                        </label>
+                
+                        <input id="error-contador-agua" name="contador_agua" type="text" placeholder="Contador opcional">
+                
+                        <label for="error-observaciones">
+                            Descripción del error
+                        </label>
+                
+                        <textarea id="error-observaciones" name="observaciones" rows="4" required
+                            placeholder="Describe el problema encontrado"></textarea>
+                
+                        <div class="photo-field">
+                            <span class="photo-title">
+                                Fotografía del contador (opcional)
+                            </span>
+                
+                            <div class="photo-actions">
+                                <button id="open-error-contador-camera" type="button" class="photo-option">
+                                    📷 Tomar foto
+                                </button>
+                
+                                <label for="error-foto-contador" class="photo-option secondary">
+                                    🖼️ Elegir archivo
+                                </label>
+                
+                                <input id="error-foto-contador" name="foto_contador" type="file" class="visually-hidden"
+                                    accept="image/*">
+                            </div>
+                
+                            <p id="error-foto-contador-status" class="photo-status">
+                                Ninguna fotografía seleccionada
+                            </p>
+                        </div>
+                
+                        <div class="photo-field">
+                            <span class="photo-title">
+                                Fotografía del inmueble (opcional)
+                            </span>
+                
+                            <div class="photo-actions">
+                                <button id="open-error-inmueble-camera" type="button" class="photo-option">
+                                    📷 Tomar foto
+                                </button>
+                
+                                <label for="error-foto-inmueble" class="photo-option secondary">
+                                    🖼️ Elegir archivo
+                                </label>
+                
+                                <input id="error-foto-inmueble" name="foto_inmueble" type="file" class="visually-hidden"
+                                    accept="image/*">
+                            </div>
+                
+                            <p id="error-foto-inmueble-status" class="photo-status">
+                                Ninguna fotografía seleccionada
+                            </p>
+                        </div>
+                
+                        <button id="error-location-button" class="secondary-button" type="button">
+                            Obtener ubicación
+                        </button>
+                
+                        <div class="coordinates">
+                            <label for="error-coordenada-x">
+                                Longitud
+                            </label>
+                
+                            <input id="error-coordenada-x" name="coordenada_x" type="text" readonly required>
+                
+                            <label for="error-coordenada-y">
+                                Latitud
+                            </label>
+                
+                            <input id="error-coordenada-y" name="coordenada_y" type="text" readonly required>
+                        </div>
+                
+                        <button id="save-error-button" class="primary-button" type="submit">
+                            Guardar error
+                        </button>
+                    </form>
+                
+                    <p id="error-capture-message" class="capture-message" aria-live="polite"></p>
+                </section>
+            </section>
+        </section>
+    </main>
+
+    <dialog id="camera-dialog" class="camera-dialog">
+        <section class="camera-container">
+            <h2 id="camera-title">
+                Tomar fotografía
+            </h2>
+
+            <video id="camera-preview" class="camera-preview" autoplay playsinline muted></video>
+
+            <canvas id="camera-canvas" hidden></canvas>
+
+            <p id="camera-message" class="camera-message" aria-live="polite"></p>
+
+            <div class="camera-actions">
+                <button type="button" id="camera-capture-button" class="primary-button" disabled>
+                    Capturar fotografía
+                </button>
+
+                <button type="button" id="camera-close-button" class="secondary-button">
+                    Cancelar
+                </button>
+            </div>
+        </section>
+    </dialog>
+
+    <script type="module" src="{{ url_for(
+            'static',
+            filename='js/offline/bootstrap.js'
+        ) }}"></script>
+
+    <script type="module" src="{{ url_for(
+            'static',
+            filename='js/pwa/captura.js'
+        ) }}"></script>
+</body>
+
+</html>

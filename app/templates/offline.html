@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>EMAX - Sin conexión</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            margin: 0;
+            padding: 24px;
+            display: grid;
+            place-items: center;
+            font-family: Arial, sans-serif;
+            background: #eef6fc;
+            color: #243447;
+        }
+
+        .offline-card {
+            width: 100%;
+            max-width: 440px;
+            padding: 32px;
+            border-radius: 16px;
+            background: white;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, .12);
+            text-align: center;
+        }
+
+        h1 {
+            margin-top: 0;
+            color: #2188dd;
+        }
+
+        .pending {
+            margin: 24px 0;
+            padding: 16px;
+            border-radius: 10px;
+            background: #f1f7fc;
+        }
+
+        .pending strong {
+            display: block;
+            margin-top: 8px;
+            font-size: 2rem;
+            color: #2188dd;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px 18px;
+            border: none;
+            border-radius: 8px;
+            background: #2188dd;
+            color: white;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+
+        #connection-status {
+            margin-top: 16px;
+            font-size: .9rem;
+            color: #667;
+        }
+    </style>
+</head>
+
+<body>
+    <main class="offline-card">
+        <h1>EMAX sin conexión</h1>
+
+        <p>
+            No hay conexión con el servidor. Las capturas guardadas
+            permanecen protegidas en este dispositivo.
+        </p>
+
+        <section class="pending">
+            Registros pendientes
+            <strong id="pending-count">0</strong>
+        </section>
+
+        <button id="retry-button" type="button">
+            Volver a intentar
+        </button>
+
+        <p id="connection-status">
+            Esperando conexión…
+        </p>
+    </main>
+
+    <script type="module">
+        import {
+            countPendingItems
+        } from "/static/js/offline/db.js"
+
+        const pendingCount =
+            document.querySelector("#pending-count")
+
+        const connectionStatus =
+            document.querySelector("#connection-status")
+
+        const retryButton =
+            document.querySelector("#retry-button")
+
+        async function updatePendingCount() {
+            try {
+                pendingCount.textContent =
+                    await countPendingItems()
+            } catch (error) {
+                console.error(
+                    "No se pudo consultar la cola:",
+                    error
+                )
+            }
+        }
+
+        retryButton.addEventListener("click", () => {
+            window.location.href = "/"
+        })
+
+        window.addEventListener("online", () => {
+            connectionStatus.textContent =
+                "Conexión recuperada. Volviendo a la aplicación…"
+
+            window.setTimeout(() => {
+                window.location.href = "/"
+            }, 500)
+        })
+
+        await updatePendingCount()
+    </script>
+</body>
+
+</html>

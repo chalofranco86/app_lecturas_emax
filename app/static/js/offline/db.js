@@ -248,3 +248,80 @@ export async function updateOutboxItem(clientUuid, changes) {
         }
     })
 }
+
+export async function putInmueble(inmueble) {
+    if (!inmueble?.codigo_tarjeta) {
+        throw new Error(
+            "El inmueble no contiene codigo_tarjeta"
+        )
+    }
+
+    const record = {
+        ...inmueble,
+        codigo_tarjeta: String(
+            inmueble.codigo_tarjeta
+        ).trim(),
+        cached_at: new Date().toISOString(),
+    }
+
+    const db = await openDatabase()
+
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction(
+            "inmuebles",
+            "readwrite"
+        )
+
+        const store =
+            transaction.objectStore("inmuebles")
+
+        store.put(record)
+
+        transaction.oncomplete = () => {
+            resolve(record)
+        }
+
+        transaction.onerror = () => {
+            reject(transaction.error)
+        }
+
+        transaction.onabort = () => {
+            reject(
+                transaction.error
+                ?? new Error(
+                    "No se pudo guardar el inmueble"
+                )
+            )
+        }
+    })
+}
+
+export async function getInmuebleByCodigo(codigo) {
+    const normalizedCode = String(codigo ?? "").trim()
+
+    if (!normalizedCode) {
+        return null
+    }
+
+    const db = await openDatabase()
+
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction(
+            "inmuebles",
+            "readonly"
+        )
+
+        const store =
+            transaction.objectStore("inmuebles")
+
+        const request = store.get(normalizedCode)
+
+        request.onsuccess = () => {
+            resolve(request.result ?? null)
+        }
+
+        request.onerror = () => {
+            reject(request.error)
+        }
+    })
+}

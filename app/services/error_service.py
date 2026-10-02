@@ -234,14 +234,14 @@ def create_error(
             path_contador = save_uploaded_file(
                 foto_contador,
                 upload_folder,
+                filename_prefix=f"error_{client_uuid}_contador",
             )
-
         if foto_inmueble and foto_inmueble.filename:
             path_inmueble = save_uploaded_file(
                 foto_inmueble,
                 upload_folder,
+                filename_prefix=f"error_{client_uuid}_inmueble",
             )
-
     except (OSError, ValueError) as error:
         return {
             "ok": False,
