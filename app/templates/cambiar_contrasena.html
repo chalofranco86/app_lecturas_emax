@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block title %}Cambiar Contraseña{% endblock %}
+
+{% block content %}
+    <style>
+        .container {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            width: 90%;
+            max-width: 400px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        h1 { color: #1e88e5; margin-bottom: 10px; font-size: 24px; }
+        .aviso { background-color: #fff3e0; color: #e65100; padding: 12px; border-radius: 6px; margin-bottom: 20px; font-size: 14px; }
+
+        form { display: flex; flex-direction: column; gap: 15px; text-align: left; }
+
+        input[type="password"] {
+            padding: 12px; border: 2px solid #bbdefb; border-radius: 6px; font-size: 16px;
+        }
+        input[type="password"]:focus { outline: none; border-color: #1e88e5; }
+
+        button {
+            background-color: #1e88e5; color: white; border: none;
+            padding: 12px; border-radius: 6px; font-size: 16px; cursor: pointer;
+        }
+        button:hover { background-color: #1565c0; }
+
+        .error-message, .error-item { color: #d32f2f; font-size: 14px; }
+    </style>
+
+    <div class="container">
+        <h1>Cambiar Contraseña</h1>
+        <div class="aviso">
+            ⚠️ Es la primera vez que ingresas al sistema. Por seguridad,
+            debes establecer una nueva contraseña antes de continuar.
+        </div>
+
+        {% if error %}
+            <p class="error-message">{{ error }}</p>
+        {% endif %}
+
+        {% if errors %}
+            <ul>
+                {% for campo, mensaje in errors.items() %}
+                    <li class="error-item">{{ mensaje }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+
+        <form action="{{ url_for('auth.cambiar_contrasena') }}" method="POST">
+            <label for="contrasena_actual">Contraseña Actual:</label>
+            <input type="password" id="contrasena_actual" name="contrasena_actual" required>
+
+            <label for="nueva">Nueva Contraseña (mín. 8 caracteres):</label>
+            <input type="password" id="nueva" name="nueva" minlength="8" required>
+
+            <label for="confirmacion">Confirmar Nueva Contraseña:</label>
+            <input type="password" id="confirmacion" name="confirmacion" minlength="8" required>
+
+            <button type="submit">Guardar y Continuar</button>
+        </form>
+    </div>
+{% endblock %}

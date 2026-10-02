@@ -4,7 +4,8 @@ from app.infrastructure.database import execute_query
 def get_lectura_by_id(lectura_id):
     query = """
     SELECT
-        l.id, i.codigo_tarjeta, i.nombre AS nombre_inmueble, i.direccion,
+        l.id, i.codigo_tarjeta, i.ruta, i.correlativo,
+        i.nombre AS nombre_inmueble, i.direccion,
         u.nombre AS nombre_usuario, l.fecha_lectura, l.lectura, l.observacion,
         l.mes_proceso, l.foto_contador, l.foto_inmueble,
         l.coordenada_x, l.coordenada_y
@@ -58,10 +59,11 @@ def get_lectura_by_client_uuid(client_uuid):
 
     return None
 
-def get_lecturas(codigo_inmueble=None):
+def get_lecturas(codigo_inmueble=None, mes_proceso=None, ruta=None, correlativo=None):
     query = """
     SELECT
-        l.id, i.codigo_tarjeta, i.nombre AS nombre_inmueble, i.direccion,
+        l.id, i.codigo_tarjeta, i.ruta, i.correlativo,
+        i.nombre AS nombre_inmueble, i.direccion,
         u.nombre AS nombre_usuario, l.fecha_lectura, l.lectura, l.observacion,
         l.mes_proceso, l.foto_contador, l.foto_inmueble,
         l.coordenada_x, l.coordenada_y
@@ -70,15 +72,32 @@ def get_lecturas(codigo_inmueble=None):
     JOIN usuarios u ON l.usuario_id = u.id
     """
 
-    params = ()
+    conditions = []
+    params = []
 
     if codigo_inmueble:
-        query += " WHERE i.codigo_tarjeta LIKE %s"
-        params = (f"%{codigo_inmueble}%",)
+        conditions.append("i.codigo_tarjeta LIKE %s")
+        params.append(f"%{codigo_inmueble}%")
 
-    query += " ORDER BY l.fecha_lectura DESC"
+    if mes_proceso:
+        conditions.append("l.mes_proceso LIKE %s")
+        params.append(f"%{mes_proceso}%")
 
-    return execute_query(query, params, fetch=True)
+    if ruta:
+        conditions.append("i.ruta = %s")
+        params.append(ruta)
+
+    if correlativo:
+        conditions.append("i.correlativo LIKE %s")
+        params.append(f"%{correlativo}%")
+
+    if conditions:
+        query += " WHERE " + " AND ".join(conditions)
+
+    # Ordenar por ID de la lectura
+    query += " ORDER BY l.id DESC"
+
+    return execute_query(query, tuple(params), fetch=True)
 #Insers de lectura, incluyendo la inserción de las fotos y coordenadas
 def insert_lectura(
     client_uuid,
@@ -173,3 +192,35 @@ def update_lectura(
 def delete_lectura(lectura_id):
     query = "DELETE FROM lecturas WHERE id = %s"
     return execute_query(query, (lectura_id,))
+
+
+# Obtiene la última lectura registrada de un inmueble ANTES de una fecha dada.
+# Si no se pasa fecha, toma la más reciente en general (la "lectura anterior").
+def get_lectura_anterior(inmueble_id, antes_de=None):
+    query = """
+    SELECT
+        l.id,
+        l.lectura,
+        l.mes_proceso,
+        l.fecha_lectura
+    FROM lecturas l
+    WHERE l.inmueble_id = %s
+    """
+
+    params = [inmueble_id]
+
+    if antes_de:
+        query += " AND l.fecha_lectura < %s"
+        params.append(antes_de)
+
+    query += """
+    ORDER BY l.fecha_lectura DESC, l.id DESC
+    LIMIT 1
+    """
+
+    lecturas = execute_query(query, tuple(params), fetch=True)
+
+    if lecturas:
+        return lecturas[0]
+
+    return None

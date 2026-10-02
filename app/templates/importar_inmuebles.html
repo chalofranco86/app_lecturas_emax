@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block title %}Importar Inmuebles{% endblock %}
+
+{% block content %}
+<div class="import-container">
+    <h1>Importar información de inmuebles</h1>
+    <p>El archivo debe incluir <strong>codigo_tarjeta</strong> y las columnas que deseas actualizar.</p>
+    <p>Columnas disponibles actualmente: <strong>correlativo</strong> y <strong>contador_eemq</strong>.</p>
+
+    {% if result %}
+        {% if result.ok %}
+            <div class="alert success">
+                Se actualizaron {{ result.updated }} inmueble(s).
+                {% if result.not_found %}
+                    No se encontraron {{ result.not_found|length }} código(s).
+                {% endif %}
+                {% if result.invalid_rows %}
+                    Se omitieron {{ result.invalid_rows|length }} fila(s) inválida(s).
+                {% endif %}
+            </div>
+        {% else %}
+            <div class="alert error">{{ result.message }}</div>
+        {% endif %}
+    {% endif %}
+
+    <form method="POST" enctype="multipart/form-data" class="import-form">
+        <label for="archivo_csv">Archivo CSV</label>
+        <input type="file" id="archivo_csv" name="archivo_csv" accept=".csv,text/csv" required>
+        <button type="submit">Cargar archivo</button>
+    </form>
+</div>
+
+<style>
+    .import-container {
+        max-width: 680px;
+        margin: 30px auto;
+        padding: 28px;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .import-container h1 {
+        color: #1e88e5;
+        margin-top: 0;
+    }
+
+    .import-form {
+        display: grid;
+        gap: 12px;
+        margin-top: 24px;
+    }
+
+    .import-form input[type="file"] {
+        padding: 10px;
+        border: 2px solid #bbdefb;
+        border-radius: 6px;
+    }
+
+    .import-form button {
+        width: fit-content;
+        padding: 10px 16px;
+        border: 0;
+        border-radius: 6px;
+        background: #1e88e5;
+        color: white;
+        cursor: pointer;
+    }
+
+    .alert {
+        padding: 12px 15px;
+        border-radius: 6px;
+        margin-top: 20px;
+    }
+
+    .alert.success {
+        background: #e8f5e9;
+        color: #2e7d32;
+    }
+
+    .alert.error {
+        background: #ffebee;
+        color: #c62828;
+    }
+</style>
+{% endblock %}

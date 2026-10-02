@@ -7,13 +7,36 @@
     <div class="container">
         <h1>Registrar Lectura para Código {{ inmueble.codigo_tarjeta }}</h1>
 
+        {% if error_message %}
+            <div class="form-error">
+                <strong>{{ error_message }}</strong>
+                {% for field, message in validation_errors.items() %}
+                    <div>{{ field }}: {{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
         <div class="inmueble-info">
             <p><strong>Nombre:</strong> {{ inmueble.nombre }}</p>
             <p><strong>Dirección:</strong> {{ inmueble.direccion }}</p>
             <p><strong>Tipo de Inmueble:</strong> {{ inmueble.tipo_inmueble }}</p>
             <p><strong>NIM:</strong> {{ inmueble.nim }}</p>
             <p><strong>Ruta:</strong> {{ inmueble.ruta }}</p>
+            <p><strong>Correlativo:</strong> {{ inmueble.correlativo }}</p>
             <p><strong>Contador:</strong> {{ inmueble.nit }}</p>
+            <p><strong>Contador EEMQ:</strong> {{ inmueble.contador_eemq }}</p>
+        </div>
+
+        <!-- 🔑 Lectura del mes anterior -->
+        <div class="lectura-anterior-info">
+            {% if lectura_anterior %}
+                <p>
+                    <strong>Lectura anterior ({{ lectura_anterior.mes_proceso }}):</strong>
+                    {{ lectura_anterior.lectura }} — registrada el {{ lectura_anterior.fecha_lectura }}
+                </p>
+            {% else %}
+                <p><strong>Lectura anterior:</strong> Sin lecturas previas registradas para este inmueble.</p>
+            {% endif %}
         </div>
 
         <!-- Campo oculto para el usuario_id -->
@@ -31,7 +54,7 @@
         </div>
 
         <h2>Datos de Lectura</h2>
-        <form action="/lecturas" method="POST" enctype="multipart/form-data" id="lecturaForm">
+        <form action="{{ url_for('lecturas.registrar_lectura') }}" method="POST" enctype="multipart/form-data" id="lecturaForm">
             <input type="hidden" name="codigo_inmueble" value="{{ inmueble.codigo_tarjeta }}">
 
             <!-- Campos ocultos para coordenadas (DENTRO del formulario) -->
@@ -101,7 +124,7 @@
     </div>
 
     <style>
-        /* Estilos globales (mantén los que ya tienes) */
+        /* Estilos globales */
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: #f0f8ff;
@@ -144,6 +167,23 @@
 
         .inmueble-info strong, .usuario-info strong {
             color: #1565c0;
+        }
+
+        /* 🔑 Estilo para la lectura anterior */
+        .lectura-anterior-info {
+            background-color: #fff3e0;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .lectura-anterior-info p {
+            margin: 8px 0;
+            font-size: 16px;
+        }
+
+        .lectura-anterior-info strong {
+            color: #e65100;
         }
 
         .usuario-info {

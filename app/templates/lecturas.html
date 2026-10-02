@@ -14,18 +14,67 @@
             </div>
         {% endif %}
 
-        <!-- Buscador de código de inmueble -->
+        <!-- Buscador: código de inmueble, ruta y mes de proceso -->
         <div class="search-container">
             <form action="{{ url_for('lecturas.listar_lecturas') }}" method="GET" class="search-form">
                 <input
                     type="text"
                     name="codigo_inmueble"
-                    placeholder="Buscar por código de inmueble..."
+                    placeholder="Código de inmueble..."
                     value="{{ request.args.get('codigo_inmueble', '') }}"
+                >
+                <input
+                    type="text"
+                    name="ruta"
+                    placeholder="Ruta..."
+                    value="{{ request.args.get('ruta', '') }}"
+                >
+                <input
+                    type="text"
+                    name="mes_proceso"
+                    placeholder="Mes de proceso (Ej: OCTUBRE 2026)..."
+                    value="{{ request.args.get('mes_proceso', '') }}"
                 >
                 <button type="submit" class="button search">Buscar</button>
                 <a href="{{ url_for('lecturas.listar_lecturas') }}" class="button clear">Limpiar</a>
             </form>
+        </div>
+
+        <!-- Sección de Reportes Excel -->
+        <div class="reportes-container">
+            <h2>Reportes Excel</h2>
+
+            <!-- Opción 1: Reporte con los filtros aplicados -->
+            <div class="reporte-box">
+                <h3>1. Reporte con filtros aplicados</h3>
+                <p>Exporta los resultados actuales de la búsqueda (usa los filtros de arriba).</p>
+                <form action="{{ url_for('lecturas.exportar_lecturas_filtrado') }}" method="GET" class="reporte-form">
+                    <input type="hidden" name="codigo_inmueble" value="{{ request.args.get('codigo_inmueble', '') }}">
+                    <input type="hidden" name="ruta" value="{{ request.args.get('ruta', '') }}">
+                    <input type="hidden" name="mes_proceso" value="{{ request.args.get('mes_proceso', '') }}">
+                    <button type="submit" class="button excel">📥 Descargar Reporte Filtrado</button>
+                </form>
+            </div>
+
+            <!-- Opción 2: Reporte por ruta (todos los datos) -->
+            <div class="reporte-box">
+                <h3>2. Reporte de todos los datos por Ruta</h3>
+                <p>Exporta todas las lecturas de una ruta específica, ordenadas por correlativo.</p>
+                <form action="{{ url_for('lecturas.exportar_lecturas_por_ruta') }}" method="GET" class="reporte-form">
+                    <input
+                        type="text"
+                        name="correlativo"
+                        placeholder="Correlativo (opcional)..."
+                        value="{{ request.args.get('correlativo', '') }}"
+                    >
+                    <input
+                        type="text"
+                        name="ruta"
+                        placeholder="Ruta (vacío = todas)..."
+                    >
+                    <button type="submit" class="button excel">📥 Descargar Reporte por Ruta</button>
+                </form>
+            </div>
         </div>
 
         <!-- Tabla de lecturas -->
@@ -35,7 +84,11 @@
                     <tr>
                         <th>ID</th>
                         <th>Código de Inmueble</th>
+                        <th>Ruta</th>
+                        <th>Correlativo</th>
                         <th>Usuario</th>
+                        <th>Lectura</th>
+                        <th>Mes de Proceso</th>
                         <th>Fecha de Lectura</th>
                         <th>Acciones</th>
                     </tr>
@@ -45,7 +98,11 @@
                         <tr>
                             <td>{{ lectura.id }}</td>
                             <td>{{ lectura.codigo_tarjeta }}</td>
+                            <td>{{ lectura.ruta }}</td>
+                            <td>{{ lectura.correlativo }}</td>
                             <td>{{ lectura.nombre_usuario }}</td>
+                            <td>{{ lectura.lectura }}</td>
+                            <td>{{ lectura.mes_proceso }}</td>
                             <td>{{ lectura.fecha_lectura }}</td>
                             <td>
                                 <a href="{{ url_for('lecturas.detalle_lectura', lectura_id=lectura.id) }}" class="button view">Ver</a>
@@ -166,7 +223,7 @@
             display: flex;
             gap: 10px;
             width: 100%;
-            max-width: 500px;
+            max-width: 700px;   /* antes 500px */
         }
 
         .search-form input[type="text"] {
@@ -181,5 +238,83 @@
             outline: none;
             border-color: #1e88e5;
         }
+
+        .search-form .route-filter {
+            flex: 0 1 140px;
+            width: 140px;
+            min-width: 100px;
+            padding: 10px;
+            border: 2px solid #bbdefb;
+            border-radius: 6px;
+            font-size: 16px;
+        }
+
+        .search-form .route-filter:focus {
+            outline: none;
+            border-color: #1e88e5;
+        }
+
+        /* Estilos para los reportes */
+        .reportes-container {
+            margin-top: 30px;
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .reporte-box {
+            flex: 1;
+            min-width: 280px;
+            background-color: white;
+            border: 1px solid #bbdefb;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+        }
+
+        .reporte-box h3 {
+            color: #1565c0;
+            margin-top: 0;
+            font-size: 17px;
+        }
+
+        .reporte-box p {
+            font-size: 14px;
+            color: #555;
+            margin-bottom: 15px;
+        }
+
+        .reporte-form {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .reporte-form input[type="text"] {
+            flex: 1;
+            min-width: 120px;
+            padding: 8px;
+            border: 2px solid #bbdefb;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .button.excel {
+            background-color: #43a047; /* Verde Excel */
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            cursor: pointer;
+            font-size: 14px;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+            white-space: nowrap;
+        }
+
+        .button.excel:hover {
+            background-color: #388e3c;
+            opacity: 0.9;
+        }
+
     </style>
 {% endblock %}

@@ -1,7 +1,7 @@
-from werkzeug.security import check_password_hash
+from werkzeug.security import check_password_hash, generate_password_hash
 
 from app.models.user import User
-from app.repositories.user_repository import get_user_by_name
+from app.repositories.user_repository import get_user_by_name, update_contrasena
 
 
 def authenticate_user(nombre, contrasena):
@@ -44,11 +44,13 @@ def authenticate_user(nombre, contrasena):
             "message": "Usuario o contraseña incorrectos",
         }
 
+    # 🔑 Pasar la bandera al modelo User
     user = User(
         usuario["id"],
         usuario["nombre"],
         usuario["correo"],
         usuario["rol"],
+        debe_cambiar_contrasena=usuario.get("debe_cambiar_contrasena", 0),
     )
 
     return {
@@ -62,6 +64,38 @@ def authenticate_user(nombre, contrasena):
                 "nombre": usuario["nombre"],
                 "correo": usuario["correo"],
                 "rol": usuario["rol"],
+                "debe_cambiar_contrasena": usuario.get(
+                    "debe_cambiar_contrasena", 0
+                ),
             }
         },
     }
+
+
+# 🔑 Nueva función: cambio de contraseña del primer login
+def cambiar_contrasena(user_id, actual, nueva, confirmacion):
+    """Valida y cambia la contraseña. Apaga la bandera al actualizar."""
+    errores = {}
+
+    if not nueva or not confirmacion:
+        errores["nueva"] = "La nueva contraseña y su confirmación son obligatorias"
+    elif nueva != confirmacion:
+        errores["confirmacion"] = "Las contraseñas no coinciden"
+    elif len(nueva) < 8:
+        errores["nueva"] = "La nueva contraseña debe tener al menos 8 caracteres"
+
+    if errores:
+        return {"ok": False, "code": "VALIDATION_ERROR", "errors": errores}
+
+    contrasena_cifrada = generate_password_hash(nueva)
+
+    resultado = update_contrasena(user_id, contrasena_cifrada)
+
+    if resultado is None:
+        return {
+            "ok": False,
+            "code": "DATABASE_ERROR",
+            "errors": {"general": "No fue posible actualizar la contraseña"},
+        }
+
+    return {"ok": True, "code": "PASSWORD_UPDATED"}

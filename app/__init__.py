@@ -18,6 +18,7 @@ def load_user(user_id):
             usuario["nombre"],
             usuario["correo"],
             usuario["rol"],
+            usuario.get("debe_cambiar_contrasena", 0),
         )
 
     return None
@@ -43,12 +44,14 @@ def register_blueprints(app):
     from app.web.auth_routes import auth_bp
     from app.web.dashboard_routes import dashboard_bp
     from app.web.error_routes import errores_bp
+    from app.web.inmueble_import_routes import inmueble_import_bp
     from app.web.lectura_routes import lecturas_bp
     #Interfaz Web
     app.register_blueprint(auth_bp)
     app.register_blueprint(dashboard_bp)
     app.register_blueprint(lecturas_bp)
     app.register_blueprint(errores_bp)
+    app.register_blueprint(inmueble_import_bp)
 
     # API
     app.register_blueprint(api_v1_bp)
