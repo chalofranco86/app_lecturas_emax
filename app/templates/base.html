@@ -75,5 +75,9 @@
     <div class="content">
         {% block content %}{% endblock %}
     </div>
+    <script type="module" src="{{ url_for(
+            'static',
+            filename='js/offline/bootstrap.js'
+        ) }}"></script>
 </body>
 </html>

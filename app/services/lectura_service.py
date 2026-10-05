@@ -209,10 +209,12 @@ def create_lectura(
         path_contador = save_uploaded_file(
             foto_contador,
             upload_folder,
+            filename_prefix=f"lectura_{client_uuid}_contador",
         )
         path_inmueble = save_uploaded_file(
             foto_inmueble,
             upload_folder,
+            filename_prefix=f"lectura_{client_uuid}_inmueble",
         )
     except OSError:
         return {

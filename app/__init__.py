@@ -7,6 +7,7 @@ from app.infrastructure.file_storage import ensure_upload_folder
 from app.models.user import User
 from app.repositories.user_repository import get_user_by_id
 
+from app.web.pwa_routes import pwa_bp
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -27,6 +28,7 @@ def load_user(user_id):
 def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
+    app.register_blueprint(pwa_bp)
 
     app.config["UPLOAD_FOLDER"] = ensure_upload_folder(
         app.config["UPLOAD_FOLDER"]
