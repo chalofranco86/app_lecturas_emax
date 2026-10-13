@@ -7,6 +7,7 @@ def get_lectura_by_id(lectura_id):
         l.id, i.codigo_tarjeta, i.ruta, i.correlativo,
         i.nombre AS nombre_inmueble, i.direccion,
         u.nombre AS nombre_usuario, l.fecha_lectura, l.lectura, l.observacion,
+        l.observacion_tipo,
         l.mes_proceso, l.foto_contador, l.foto_inmueble,
         l.coordenada_x, l.coordenada_y
     FROM lecturas l
@@ -34,6 +35,7 @@ def get_lectura_by_client_uuid(client_uuid):
         l.fecha_lectura,
         l.lectura,
         l.observacion,
+        l.observacion_tipo,
         l.mes_proceso,
         l.foto_contador,
         l.foto_inmueble,
@@ -64,9 +66,19 @@ def get_lecturas(codigo_inmueble=None, mes_proceso=None, ruta=None, correlativo=
     SELECT
         l.id, i.codigo_tarjeta, i.ruta, i.correlativo,
         i.nombre AS nombre_inmueble, i.direccion,
+        i.nit, i.contador_eemq,
         u.nombre AS nombre_usuario, l.fecha_lectura, l.lectura, l.observacion,
+        l.observacion_tipo,
         l.mes_proceso, l.foto_contador, l.foto_inmueble,
-        l.coordenada_x, l.coordenada_y
+        l.coordenada_x, l.coordenada_y,
+        (
+            SELECT l2.lectura
+            FROM lecturas l2
+            WHERE l2.inmueble_id = l.inmueble_id
+              AND l2.fecha_lectura < l.fecha_lectura
+            ORDER BY l2.fecha_lectura DESC, l2.id DESC
+            LIMIT 1
+        ) AS lectura_anterior
     FROM lecturas l
     JOIN inmuebles i ON l.inmueble_id = i.id
     JOIN usuarios u ON l.usuario_id = u.id
@@ -108,6 +120,7 @@ def insert_lectura(
     fecha_lectura,
     lectura,
     observacion,
+    observacion_tipo,
     mes_proceso,
     coordenada_x,
     coordenada_y,
@@ -122,13 +135,14 @@ def insert_lectura(
         fecha_lectura,
         lectura,
         observacion,
+        observacion_tipo,
         mes_proceso,
         coordenada_x,
         coordenada_y
     )
     VALUES (
         %s, %s, %s, %s, %s,
-        %s, %s, %s, %s, %s, %s
+        %s, %s, %s, %s, %s, %s, %s
     )
     """
 
@@ -141,6 +155,7 @@ def insert_lectura(
         fecha_lectura,
         lectura,
         observacion,
+        observacion_tipo,   # ← nuevo
         mes_proceso,
         coordenada_x,
         coordenada_y,

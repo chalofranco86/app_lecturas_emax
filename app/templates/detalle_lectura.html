@@ -15,6 +15,7 @@
             <p><strong>Fecha de Lectura:</strong> {{ lectura.fecha_lectura }}</p>
             <p><strong>Lectura:</strong> {{ lectura.lectura }}</p>
             <p><strong>Observación:</strong> {{ lectura.observacion if lectura.observacion else "Ninguna" }}</p>
+            <p><strong>Observación Tipo:</strong> {{ lectura.observacion_tipo if lectura.observacion_tipo else "Sin cambio de contador" }}</p>
             <p><strong>Mes de Proceso:</strong> {{ lectura.mes_proceso }}</p>
             <p><strong>Coordenada X (Longitud):</strong> {{ lectura.coordenada_x if lectura.coordenada_x else "No disponible" }}</p>
             <p><strong>Coordenada Y (Latitud):</strong> {{ lectura.coordenada_y if lectura.coordenada_y else "No disponible" }}</p>

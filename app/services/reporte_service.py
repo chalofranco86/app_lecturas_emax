@@ -9,11 +9,15 @@ COLUMNAS = [
     ("Correlativo", "correlativo"),
     ("Nombre del Inmueble", "nombre_inmueble"),
     ("Dirección", "direccion"),
+    ("Contador EMAX", "nit"),
+    ("Contador EEMQ", "contador_eemq"),
     ("Usuario", "nombre_usuario"),
     ("Lectura", "lectura"),
+    ("Lectura Anterior", "lectura_anterior"),
     ("Mes de Proceso", "mes_proceso"),
     ("Fecha de Lectura", "fecha_lectura"),
     ("Observación", "observacion"),
+    ("Observación Tipo", "observacion_tipo"),   # ← nuevo
     ("Coordenada X", "coordenada_x"),
     ("Coordenada Y", "coordenada_y"),
 ]
