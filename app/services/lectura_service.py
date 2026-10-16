@@ -239,6 +239,30 @@ def create_lectura(
         data.get("observacion") or ""
     ).strip() or None
 
+    # 🔑 Observación Tipo (cambio de contador)
+    contador_cambiado = str(
+        data.get("contador_cambiado") or ""
+    ).strip().lower()
+
+    observacion_tipo = str(
+        data.get("observacion_tipo") or ""
+    ).strip() or None
+
+    if contador_cambiado == "si":
+        if not observacion_tipo:
+            errores["observacion_tipo"] = (
+                "Debes describir el cambio del contador "
+                "en Observación Tipo"
+            )
+        elif len(observacion_tipo) > 255:
+            errores["observacion_tipo"] = (
+                "La observación tipo no puede superar "
+                "los 255 caracteres"
+            )
+    else:
+        # Si no hubo cambio, no guardar nada
+        observacion_tipo = None
+
     if usuario_id is None:
         errores["usuario_id"] = (
             "No se pudo identificar al usuario"
@@ -329,7 +353,7 @@ def create_lectura(
         fecha_lectura=fecha_captura,
         lectura=lectura,
         observacion=observacion,
-        periodo_proceso=periodo_proceso,
+        observacion_tipo=observacion_tipo,   # ← nuevo
         mes_proceso=mes_proceso,
         coordenada_x=coordenada_x,
         coordenada_y=coordenada_y,
