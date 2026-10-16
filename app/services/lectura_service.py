@@ -1,3 +1,5 @@
+import re
+
 from datetime import datetime, timezone
 from decimal import Decimal, InvalidOperation
 from uuid import UUID
@@ -8,9 +10,63 @@ from app.repositories.inmueble_repository import (
 )
 from app.repositories.lectura_repository import (
     get_lectura_by_client_uuid,
+    get_lectura_by_inmueble_and_periodo,
     insert_lectura,
 )
 
+
+MESES_ES = (
+    "ENERO",
+    "FEBRERO",
+    "MARZO",
+    "ABRIL",
+    "MAYO",
+    "JUNIO",
+    "JULIO",
+    "AGOSTO",
+    "SEPTIEMBRE",
+    "OCTUBRE",
+    "NOVIEMBRE",
+    "DICIEMBRE",
+)
+
+PERIODO_PROCESO_PATTERN = re.compile(
+    r"^(?P<anio>\d{4})-(?P<mes>0[1-9]|1[0-2])$"
+)
+
+def normalizar_periodo_proceso(valor):
+    """
+    Recibe YYYY-MM y genera:
+
+        periodo_proceso: date, por ejemplo 2026-09-01
+        mes_proceso: str, por ejemplo SEPTIEMBRE 2026
+    """
+    valor = str(valor or "").strip()
+
+    coincidencia = PERIODO_PROCESO_PATTERN.fullmatch(
+        valor
+    )
+
+    if coincidencia is None:
+        return None, None
+
+    anio = int(coincidencia.group("anio"))
+    mes = int(coincidencia.group("mes"))
+
+    if not 1900 <= anio <= 2100:
+        return None, None
+
+    periodo_proceso = datetime(
+        anio,
+        mes,
+        1,
+    ).date()
+
+    mes_proceso = (
+        f"{MESES_ES[mes - 1]} {anio}"
+    )
+
+    return periodo_proceso, mes_proceso
 
 def create_lectura(
     data,
@@ -92,20 +148,6 @@ def create_lectura(
             "La lectura es obligatoria y debe ser un entero"
         )
 
-    mes_proceso = str(
-        data.get("mes_proceso") or ""
-    ).strip()
-
-    if not mes_proceso:
-        errores["mes_proceso"] = (
-            "El mes de proceso es obligatorio"
-        )
-    elif len(mes_proceso) > 50:
-        errores["mes_proceso"] = (
-            "El mes de proceso no puede superar "
-            "los 50 caracteres"
-        )
-
     coordenada_x_raw = data.get("coordenada_x")
     coordenada_y_raw = data.get("coordenada_y")
 
@@ -149,27 +191,49 @@ def create_lectura(
         data.get("fecha_captura") or ""
     ).strip()
 
+    fecha_captura = None
+    periodo_proceso = None
+    mes_proceso = None
+
     try:
-        fecha_captura = datetime.fromisoformat(
-            fecha_captura_raw.replace("Z", "+00:00")
+        fecha_captura_con_zona = datetime.fromisoformat(
+            echa_captura_raw = str(
+        data.get("fecha_captura") or ""
+    ).strip()
         )
 
-        if fecha_captura.tzinfo is None:
+        if fecha_captura_con_zona.tzinfo is None:
             errores["fecha_captura"] = (
                 "La fecha debe incluir su zona horaria"
             )
         else:
-            # Guardar las nuevas capturas en UTC
+            (
+                periodo_proceso,
+                mes_proceso,
+            ) = calcular_periodo_proceso(
+                fecha_captura_con_zona
+            )
+
+            # MariaDB almacenará la captura en UTC.
             fecha_captura = (
-                fecha_captura
+                fecha_captura_con_zona
                 .astimezone(timezone.utc)
                 .replace(tzinfo=None)
             )
+
     except (ValueError, TypeError):
-        fecha_captura = None
         errores["fecha_captura"] = (
-            "La fecha de captura debe tener formato ISO 8601"
+            "La fecha de captura debe tener "
+            "formato ISO 8601"
         )
+
+    if errores:
+        return {
+            "ok": False,
+            "code": "VALIDATION_ERROR",
+            "message": "Existen datos inválidos",
+            "errors": errores,
+        }
 
     observacion = str(
         data.get("observacion") or ""
@@ -202,6 +266,27 @@ def create_lectura(
             "code": "VALIDATION_ERROR",
             "message": "Existen datos inválidos",
             "errors": errores,
+        }
+
+    # 5. Impedir más de una lectura por inmueble
+    # y periodo de proceso.
+    lectura_del_periodo = (
+        get_lectura_by_inmueble_and_periodo(
+            inmueble_id=inmueble["id"],
+            periodo_proceso=periodo_proceso,
+        )
+    )
+
+    if lectura_del_periodo:
+        return {
+            "ok": False,
+            "created": False,
+            "code": "LECTURA_PERIOD_ALREADY_EXISTS",
+            "message": (
+                "El inmueble ya tiene una lectura "
+                f"registrada para {mes_proceso}"
+            ),
+            "data": lectura_del_periodo,
         }
 
     # 5. Guardar fotografías
@@ -244,6 +329,7 @@ def create_lectura(
         fecha_lectura=fecha_captura,
         lectura=lectura,
         observacion=observacion,
+        periodo_proceso=periodo_proceso,
         mes_proceso=mes_proceso,
         coordenada_x=coordenada_x,
         coordenada_y=coordenada_y,

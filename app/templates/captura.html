@@ -131,11 +131,13 @@
                             <input id="lectura-value" name="lectura" type="number" min="0" inputmode="numeric"
                                 placeholder="Valor del contador">
 
-                            <label for="mes-proceso">
-                                Mes de proceso
-                            </label>
-
-                            <input id="mes-proceso" name="mes_proceso" type="text" required placeholder="202610">
+                            <div class="form-group">
+                                <label for="periodo-proceso">
+                                    Mes de proceso
+                                </label>
+                            
+                                <input type="month" id="periodo-proceso" name="periodo_proceso" required autocomplete="off">
+                            </div>
 
                             <label for="lectura-observacion">
                                 Observación

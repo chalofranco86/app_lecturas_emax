@@ -33,17 +33,106 @@ from app.services.reporte_service import generar_excel_lecturas
 lecturas_bp = Blueprint('lecturas', __name__)
 
 
+MESES_ES = {
+    "ENERO": 1,
+    "FEBRERO": 2,
+    "MARZO": 3,
+    "ABRIL": 4,
+    "MAYO": 5,
+    "JUNIO": 6,
+    "JULIO": 7,
+    "AGOSTO": 8,
+    "SEPTIEMBRE": 9,
+    "OCTUBRE": 10,
+    "NOVIEMBRE": 11,
+    "DICIEMBRE": 12,
+}
+
+
+def normalizar_periodo_filtro(valor):
+    """
+    Convierte cualquiera de estos formatos:
+
+        OCTUBRE 2026 -> 2026-10-01
+        2026-10      -> 2026-10-01
+        2026-10-01   -> 2026-10-01
+    """
+    if not valor:
+        return None
+
+    valor = " ".join(
+        valor.strip().upper().split()
+    )
+
+    for formato in ("%Y-%m", "%Y-%m-%d"):
+        try:
+            fecha = datetime.strptime(
+                valor,
+                formato,
+            ).date()
+
+            return fecha.replace(
+                day=1,
+            ).isoformat()
+
+        except ValueError:
+            continue
+
+    partes = valor.split(" ")
+
+    if len(partes) == 2:
+        nombre_mes, anio_texto = partes
+
+        numero_mes = MESES_ES.get(nombre_mes)
+
+        if numero_mes and anio_texto.isdigit():
+            anio = int(anio_texto)
+
+            if 1900 <= anio <= 2100:
+                return (
+                    f"{anio:04d}-"
+                    f"{numero_mes:02d}-01"
+                )
+
+    return None
+
 @lecturas_bp.route("/lecturas")
 @login_required
 def listar_lecturas():
-    lecturas = get_lecturas(
-        codigo_inmueble=request.args.get("codigo_inmueble"),
-        mes_proceso=request.args.get("mes_proceso"),
-        ruta=request.args.get("ruta"),
-        correlativo=request.args.get("correlativo"),
+    periodo_solicitado = (
+        request.args.get("periodo_proceso")
+        or request.args.get("mes_proceso")
     )
-    return render_template("lecturas.html", lecturas=lecturas)
 
+    periodo_proceso = normalizar_periodo_filtro(
+        periodo_solicitado
+    )
+
+    if periodo_solicitado and not periodo_proceso:
+        return render_template(
+            "lecturas.html",
+            lecturas=[],
+            error_message=(
+                "El mes de proceso no tiene un "
+                "formato válido. Ejemplo: OCTUBRE 2026"
+            ),
+        ), 400
+
+    lecturas = get_lecturas(
+        codigo_inmueble=request.args.get(
+            "codigo_inmueble"
+        ),
+        periodo_proceso=periodo_proceso,
+        ruta=request.args.get("ruta"),
+        correlativo=request.args.get(
+            "correlativo"
+        ),
+    )
+
+    return render_template(
+        "lecturas.html",
+        lecturas=lecturas,
+    )
 
 @lecturas_bp.route('/lecturas', methods=['POST'])
 @login_required
@@ -259,36 +348,79 @@ def mostrar_lectura_por_contador(contador):
 # --- REPORTES EXCEL ---
 
 # Opción 1: Reporte con los filtros aplicados en la búsqueda
-@lecturas_bp.route("/lecturas/exportar/filtrado", methods=["GET"])
+@lecturas_bp.route(
+    "/lecturas/exportar/filtrado",
+    methods=["GET"],
+)
 @login_required
 def exportar_lecturas_filtrado():
-    codigo_inmueble = request.args.get("codigo_inmueble")
-    mes_proceso = request.args.get("mes_proceso")
-    ruta = request.args.get("ruta")
-    correlativo = request.args.get("correlativo")
+    codigo_inmueble = request.args.get(
+        "codigo_inmueble"
+    )
+
+    periodo_solicitado = (
+        request.args.get("periodo_proceso")
+        or request.args.get("mes_proceso")
+    )
+
+    periodo_proceso = normalizar_periodo_filtro(
+        periodo_solicitado
+    )
+
+    if periodo_solicitado and not periodo_proceso:
+        return redirect(
+            url_for(
+                "lecturas.listar_lecturas",
+                message=(
+                    "El mes de proceso no tiene "
+                    "un formato válido"
+                ),
+                message_type="error",
+            )
+        )
 
     lecturas = get_lecturas(
         codigo_inmueble=codigo_inmueble,
-        mes_proceso=mes_proceso,
-        ruta=ruta,
-        correlativo=correlativo,
+        periodo_proceso=periodo_proceso,
+        ruta=request.args.get("ruta"),
+        correlativo=request.args.get(
+            "correlativo"
+        ),
     )
 
     if not lecturas:
-        return redirect(url_for("lecturas.listar_lecturas",
-                                message="No hay datos para exportar con esos filtros",
-                                message_type="error"))
+        return redirect(
+            url_for(
+                "lecturas.listar_lecturas",
+                message=(
+                    "No hay datos para exportar "
+                    "con esos filtros"
+                ),
+                message_type="error",
+            )
+        )
 
-    excel = generar_excel_lecturas(lecturas, nombre_hoja="Lecturas Filtradas")
+    excel = generar_excel_lecturas(
+        lecturas,
+        nombre_hoja="Lecturas Filtradas",
+    )
 
-    fecha_actual = dt_local.now().strftime("%Y%m%d_%H%M")
-    nombre_archivo = f"lecturas_filtradas_{fecha_actual}.xlsx"
+    fecha_actual = dt_local.now().strftime(
+        "%Y%m%d_%H%M"
+    )
+
+    nombre_archivo = (
+        f"lecturas_filtradas_{fecha_actual}.xlsx"
+    )
 
     return send_file(
         excel,
         as_attachment=True,
         download_name=nombre_archivo,
-        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        mimetype=(
+            "application/vnd.openxmlformats-"
+            "officedocument.spreadsheetml.sheet"
+        ),
     )
 
 

@@ -7,7 +7,7 @@ def get_lectura_by_id(lectura_id):
         l.id, i.codigo_tarjeta, i.ruta, i.correlativo,
         i.nombre AS nombre_inmueble, i.direccion,
         u.nombre AS nombre_usuario, l.fecha_lectura, l.lectura, l.observacion,
-        l.mes_proceso, l.foto_contador, l.foto_inmueble,
+        l.mes_proceso, l.periodo_proceso, l.foto_contador, l.foto_inmueble,
         l.coordenada_x, l.coordenada_y
     FROM lecturas l
     JOIN inmuebles i ON l.inmueble_id = i.id
@@ -35,6 +35,7 @@ def get_lectura_by_client_uuid(client_uuid):
         l.lectura,
         l.observacion,
         l.mes_proceso,
+        l.periodo_proceso,
         l.foto_contador,
         l.foto_inmueble,
         l.coordenada_x,
@@ -59,14 +60,31 @@ def get_lectura_by_client_uuid(client_uuid):
 
     return None
 
-def get_lecturas(codigo_inmueble=None, mes_proceso=None, ruta=None, correlativo=None):
+
+def get_lecturas(
+    codigo_inmueble=None,
+    periodo_proceso=None,
+    ruta=None,
+    correlativo=None,
+):
     query = """
     SELECT
-        l.id, i.codigo_tarjeta, i.ruta, i.correlativo,
-        i.nombre AS nombre_inmueble, i.direccion,
-        u.nombre AS nombre_usuario, l.fecha_lectura, l.lectura, l.observacion,
-        l.mes_proceso, l.foto_contador, l.foto_inmueble,
-        l.coordenada_x, l.coordenada_y
+        l.id,
+        i.codigo_tarjeta,
+        i.ruta,
+        i.correlativo,
+        i.nombre AS nombre_inmueble,
+        i.direccion,
+        u.nombre AS nombre_usuario,
+        l.fecha_lectura,
+        l.lectura,
+        l.observacion,
+        l.mes_proceso,
+        l.periodo_proceso,
+        l.foto_contador,
+        l.foto_inmueble,
+        l.coordenada_x,
+        l.coordenada_y
     FROM lecturas l
     JOIN inmuebles i ON l.inmueble_id = i.id
     JOIN usuarios u ON l.usuario_id = u.id
@@ -79,9 +97,9 @@ def get_lecturas(codigo_inmueble=None, mes_proceso=None, ruta=None, correlativo=
         conditions.append("i.codigo_tarjeta LIKE %s")
         params.append(f"%{codigo_inmueble}%")
 
-    if mes_proceso:
-        conditions.append("l.mes_proceso LIKE %s")
-        params.append(f"%{mes_proceso}%")
+    if periodo_proceso:
+        conditions.append("l.periodo_proceso = %s")
+        params.append(periodo_proceso)
 
     if ruta:
         conditions.append("i.ruta = %s")
@@ -94,10 +112,13 @@ def get_lecturas(codigo_inmueble=None, mes_proceso=None, ruta=None, correlativo=
     if conditions:
         query += " WHERE " + " AND ".join(conditions)
 
-    # Ordenar por ID de la lectura
     query += " ORDER BY l.id DESC"
 
-    return execute_query(query, tuple(params), fetch=True)
+    return execute_query(
+        query,
+        tuple(params),
+        fetch=True,
+    )
 #Insers de lectura, incluyendo la inserción de las fotos y coordenadas
 def insert_lectura(
     client_uuid,
@@ -109,27 +130,29 @@ def insert_lectura(
     lectura,
     observacion,
     mes_proceso,
+    periodo_proceso,
     coordenada_x,
     coordenada_y,
 ):
     query = """
     INSERT INTO lecturas (
-        client_uuid,
-        inmueble_id,
-        usuario_id,
-        foto_contador,
-        foto_inmueble,
-        fecha_lectura,
-        lectura,
-        observacion,
-        mes_proceso,
-        coordenada_x,
-        coordenada_y
+    client_uuid,
+    inmueble_id,
+    usuario_id,
+    foto_contador,
+    foto_inmueble,
+    fecha_lectura,
+    lectura,
+    observacion,
+    mes_proceso,
+    periodo_proceso,
+    coordenada_x,
+    coordenada_y
     )
     VALUES (
-        %s, %s, %s, %s, %s,
+        %s, %s, %s, %s, %s, %s,
         %s, %s, %s, %s, %s, %s
-    )
+    )   
     """
 
     params = (
@@ -142,6 +165,7 @@ def insert_lectura(
         lectura,
         observacion,
         mes_proceso,
+        periodo_proceso,
         coordenada_x,
         coordenada_y,
     )
@@ -224,3 +248,30 @@ def get_lectura_anterior(inmueble_id, antes_de=None):
         return lecturas[0]
 
     return None
+
+
+def get_lectura_by_inmueble_and_periodo(
+    inmueble_id,
+    periodo_proceso,
+):
+    query = """
+    SELECT
+        id,
+        inmueble_id,
+        client_uuid,
+        fecha_lectura,
+        mes_proceso,
+        periodo_proceso
+    FROM lecturas
+    WHERE inmueble_id = %s
+      AND periodo_proceso = %s
+    LIMIT 1
+    """
+
+    resultados = execute_query(
+        query,
+        (inmueble_id, periodo_proceso),
+        fetch=True,
+    )
+
+    return resultados[0] if resultados else None

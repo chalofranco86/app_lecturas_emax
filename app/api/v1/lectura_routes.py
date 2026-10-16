@@ -31,6 +31,7 @@ def registrar_lectura():
         "INMUEBLE_NOT_FOUND": 404,
         "FILE_STORAGE_ERROR": 500,
         "DATABASE_ERROR": 500,
+        "LECTURA_PERIOD_ALREADY_EXISTS": 409,
     }
 
     status_code = status_codes.get(

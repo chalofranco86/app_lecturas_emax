@@ -70,8 +70,12 @@
             <textarea id="observacion" name="observacion" rows="3" placeholder="Ejemplo: Contador dañado, lectura estimada..."></textarea>
 
             <!-- Campo para mes de proceso -->
-            <label for="mes_proceso">Mes de Proceso:</label>
-            <input type="text" id="mes_proceso" name="mes_proceso" placeholder="Ejemplo: Enero 2026, 01-2026, 1" required>
+            <label for="periodo_proceso">
+                Mes de Proceso:
+            </label>
+            
+            <input type="month" id="periodo_proceso" name="periodo_proceso" value="{{ request.form.get('periodo_proceso', '') }}"
+                required autocomplete="off">
 
             <h2>Subir Fotos</h2>
 

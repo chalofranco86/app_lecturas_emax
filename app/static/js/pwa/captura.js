@@ -96,8 +96,8 @@ const lecturaForm =
 const lecturaValue =
     document.querySelector("#lectura-value")
 
-const mesProceso =
-    document.querySelector("#mes-proceso")
+const periodoProcesoInput =
+    document.querySelector("#periodo-proceso")
 
 const lecturaObservacion =
     document.querySelector("#lectura-observacion")
@@ -394,18 +394,6 @@ function setErrorCaptureMessage(
 // Valores y fotografías
 // ======================================================
 
-function setDefaultProcessMonth() {
-    const now = new Date()
-
-    const month = String(
-        now.getMonth() + 1
-    ).padStart(2, "0")
-
-    mesProceso.value =
-        `${now.getFullYear()}${month}`
-}
-
-
 function nullableValue(input) {
     return input.value.trim() || null
 }
@@ -491,8 +479,6 @@ function resetErrorPhotos() {
 
 function resetLecturaForm() {
     lecturaForm.reset()
-
-    setDefaultProcessMonth()
     resetLecturaPhotos()
 
     coordenadaX.value = ""
@@ -1455,6 +1441,21 @@ lecturaForm.addEventListener(
 
             return
         }
+        const periodoProceso =
+            periodoProcesoInput.value.trim()
+
+        const periodoPattern =
+            /^\d{4}-(0[1-9]|1[0-2])$/
+
+        if (!periodoPattern.test(periodoProceso)) {
+            setCaptureMessage(
+                "Selecciona un mes de proceso válido",
+                "error"
+            )
+
+            periodoProcesoInput.focus()
+            return
+        }
 
         const contadorFile =
             getSelectedPhoto(
@@ -1520,8 +1521,8 @@ lecturaForm.addEventListener(
                                 lecturaObservacion
                             ),
 
-                        mes_proceso:
-                            mesProceso.value.trim(),
+                        periodo_proceso:
+                            periodoProceso,
 
                         coordenada_x:
                             coordenadaX.value,
@@ -1852,4 +1853,3 @@ window.addEventListener(
 
 updateConnectionStatus()
 await updatePendingCount()
-setDefaultProcessMonth()
