@@ -347,3 +347,35 @@ body {
         grid-template-columns: 1fr;
     }
 }
+
+.lectura-anterior-info {
+    padding: 1rem;
+    margin: 1rem 0;
+    border-radius: 0.75rem;
+    background: #fff3e0;
+    color: #7a4100;
+}
+
+.contador-cambiado-field {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    padding: 1rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 0.75rem;
+}
+
+.contador-cambiado-field legend {
+    padding: 0 0.4rem;
+    font-weight: 600;
+}
+
+.contador-cambiado-field label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+[hidden] {
+    display: none !important;
+}

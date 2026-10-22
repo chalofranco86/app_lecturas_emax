@@ -96,11 +96,38 @@ const lecturaForm =
 const lecturaValue =
     document.querySelector("#lectura-value")
 
+const inmuebleCorrelativo =
+    document.querySelector("#inmueble-correlativo")
+
+const inmuebleContadorEemq =
+    document.querySelector(
+        "#inmueble-contador-eemq"
+    )
+
 const periodoProcesoInput =
     document.querySelector("#periodo-proceso")
 
 const lecturaObservacion =
     document.querySelector("#lectura-observacion")
+
+const lecturaAnteriorBox =
+    document.querySelector("#lectura-anterior-box")
+
+const lecturaAnteriorText =
+    document.querySelector("#lectura-anterior-text")
+
+const contadorCambiadoRadios =
+    document.querySelectorAll(
+        'input[name="contador_cambiado"]'
+    )
+
+const observacionTipoContainer =
+    document.querySelector(
+        "#observacion-tipo-container"
+    )
+
+const observacionTipo =
+    document.querySelector("#observacion-tipo")
 
 const fotoContador =
     document.querySelector("#foto-contador")
@@ -134,6 +161,8 @@ const saveLecturaButton =
 
 const captureMessage =
     document.querySelector("#capture-message")
+
+const DIFERENCIA_MAXIMA = 150
 
 
 // ======================================================
@@ -484,6 +513,7 @@ function resetLecturaForm() {
     coordenadaX.value = ""
     coordenadaY.value = ""
 
+    updateContadorCambiadoFields()
     setCaptureMessage("")
 }
 
@@ -537,6 +567,36 @@ function hideInmueble() {
 // Renderizado del inmueble
 // ======================================================
 
+function renderLecturaAnterior(
+    lecturaAnterior
+) {
+    if (
+        !lecturaAnterior
+        || lecturaAnterior.lectura === null
+        || lecturaAnterior.lectura === undefined
+    ) {
+        lecturaAnteriorBox.dataset
+            .lecturaAnterior = ""
+
+        lecturaAnteriorText.textContent =
+            "Lectura anterior: "
+            + "sin lecturas registradas."
+
+        return
+    }
+
+    lecturaAnteriorBox.dataset.lecturaAnterior =
+        String(lecturaAnterior.lectura)
+
+    const periodo =
+        lecturaAnterior.mes_proceso
+        || "período anterior"
+
+    lecturaAnteriorText.textContent =
+        `Lectura anterior (${periodo}): `
+        + `${lecturaAnterior.lectura}`
+}
+
 function renderInmueble(
     inmueble,
     source
@@ -561,6 +621,16 @@ function renderInmueble(
 
     inmuebleNit.textContent =
         inmueble.nit || "—"
+
+    inmuebleCorrelativo.textContent =
+        inmueble.correlativo || "—"
+
+    inmuebleContadorEemq.textContent =
+        inmueble.contador_eemq || "—"
+
+    renderLecturaAnterior(
+        inmueble.lectura_anterior
+    )
 
     if (source === "server") {
         resultSource.textContent =
@@ -589,6 +659,38 @@ function renderInmueble(
     // Primero se elige la operación.
     lecturaSection.hidden = true
     errorSection.hidden = true
+}
+
+function updateContadorCambiadoFields() {
+    if (
+        !observacionTipoContainer
+        || !observacionTipo
+    ) {
+        console.error(
+            "No se encontraron los campos "
+            + "de cambio de contador"
+        )
+
+        return
+    }
+
+    const selected =
+        document.querySelector(
+            'input[name="contador_cambiado"]:checked'
+        )
+
+    const contadorCambiado =
+        selected?.value === "si"
+
+    observacionTipoContainer.hidden =
+        !contadorCambiado
+
+    observacionTipo.required =
+        contadorCambiado
+
+    if (!contadorCambiado) {
+        observacionTipo.value = ""
+    }
 }
 
 
@@ -1249,6 +1351,16 @@ bindCameraButton(
     setErrorCaptureMessage
 )
 
+// ======================================================
+// Eventos de cambio de Radio Button
+// ======================================================
+
+contadorCambiadoRadios.forEach(radio => {
+    radio.addEventListener(
+        "change",
+        updateContadorCambiadoFields
+    )
+})
 
 // ======================================================
 // Eventos del diálogo de cámara
@@ -1441,6 +1553,77 @@ lecturaForm.addEventListener(
 
             return
         }
+
+        const lecturaActual =
+            Number.parseInt(
+                lecturaValue.value,
+                10
+            )
+
+        if (!Number.isInteger(lecturaActual)) {
+            setCaptureMessage(
+                "La lectura debe ser un número entero",
+                "error"
+            )
+
+            lecturaValue.focus()
+            return
+        }
+
+        const lecturaAnterior =
+            Number.parseInt(
+                selectedInmueble
+                    ?.lectura_anterior
+                    ?.lectura,
+                10
+            )
+
+        if (Number.isInteger(lecturaAnterior)) {
+            const diferencia = Math.abs(
+                lecturaActual - lecturaAnterior
+            )
+
+            if (
+                diferencia > DIFERENCIA_MAXIMA
+            ) {
+                const confirmed =
+                    window.confirm(
+                        "⚠️ LECTURA FUERA DE RANGO\n\n"
+                        + `Lectura anterior: ${lecturaAnterior}\n`
+                        + `Lectura ingresada: ${lecturaActual}\n`
+                        + `Diferencia: ${diferencia}\n`
+                        + `Máximo esperado: ${DIFERENCIA_MAXIMA}\n\n`
+                        + "¿Deseas guardar esta lectura?"
+                    )
+
+                if (!confirmed) {
+                    lecturaValue.focus()
+                    return
+                }
+            }
+        }
+
+        const contadorCambiado =
+            document.querySelector(
+                'input[name="contador_cambiado"]:checked'
+            )?.value || "no"
+
+        const observacionTipoValue =
+            observacionTipo.value.trim()
+
+        if (
+            contadorCambiado === "si"
+            && !observacionTipoValue
+        ) {
+            setCaptureMessage(
+                "Describe el cambio realizado al contador",
+                "error"
+            )
+
+            observacionTipo.focus()
+            return
+        }
+
         const periodoProceso =
             periodoProcesoInput.value.trim()
 
@@ -1509,20 +1692,26 @@ lecturaForm.addEventListener(
 
                     payload: {
                         codigo_inmueble:
-                            selectedInmueble
-                                .codigo_tarjeta,
+                            selectedInmueble.codigo_tarjeta,
 
                         lectura:
-                            lecturaValue.value
-                            || null,
+                            lecturaValue.value,
 
                         observacion:
                             nullableValue(
                                 lecturaObservacion
                             ),
 
+                        contador_cambiado:
+                            contadorCambiado,
+
+                        observacion_tipo:
+                            contadorCambiado === "si"
+                                ? observacionTipoValue
+                                : null,
+
                         periodo_proceso:
-                            periodoProceso,
+                            periodoProcesoInput.value.trim(),
 
                         coordenada_x:
                             coordenadaX.value,
@@ -1531,8 +1720,7 @@ lecturaForm.addEventListener(
                             coordenadaY.value,
 
                         fecha_captura:
-                            new Date()
-                                .toISOString(),
+                            new Date().toISOString(),
                     },
 
                     files: {
@@ -1852,4 +2040,5 @@ window.addEventListener(
 // ======================================================
 
 updateConnectionStatus()
+updateContadorCambiadoFields()
 await updatePendingCount()

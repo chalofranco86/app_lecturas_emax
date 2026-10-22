@@ -192,14 +192,13 @@ def create_lectura(
     ).strip()
 
     fecha_captura = None
-    periodo_proceso = None
-    mes_proceso = None
 
     try:
         fecha_captura_con_zona = datetime.fromisoformat(
-            echa_captura_raw = str(
-        data.get("fecha_captura") or ""
-    ).strip()
+            fecha_captura_raw.replace(
+                "Z",
+                "+00:00",
+            )
         )
 
         if fecha_captura_con_zona.tzinfo is None:
@@ -207,14 +206,6 @@ def create_lectura(
                 "La fecha debe incluir su zona horaria"
             )
         else:
-            (
-                periodo_proceso,
-                mes_proceso,
-            ) = calcular_periodo_proceso(
-                fecha_captura_con_zona
-            )
-
-            # MariaDB almacenará la captura en UTC.
             fecha_captura = (
                 fecha_captura_con_zona
                 .astimezone(timezone.utc)
@@ -227,13 +218,18 @@ def create_lectura(
             "formato ISO 8601"
         )
 
-    if errores:
-        return {
-            "ok": False,
-            "code": "VALIDATION_ERROR",
-            "message": "Existen datos inválidos",
-            "errors": errores,
-        }
+    (
+        periodo_proceso,
+        mes_proceso,
+    ) = normalizar_periodo_proceso(
+        data.get("periodo_proceso")
+    )
+
+    if periodo_proceso is None:
+        errores["periodo_proceso"] = (
+            "El mes de proceso es obligatorio "
+            "y debe tener formato YYYY-MM"
+        )
 
     observacion = str(
         data.get("observacion") or ""
@@ -354,6 +350,7 @@ def create_lectura(
         lectura=lectura,
         observacion=observacion,
         observacion_tipo=observacion_tipo,   # ← nuevo
+        periodo_proceso=periodo_proceso,
         mes_proceso=mes_proceso,
         coordenada_x=coordenada_x,
         coordenada_y=coordenada_y,

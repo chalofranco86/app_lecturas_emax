@@ -148,12 +148,14 @@ def insert_lectura(
         observacion,
         observacion_tipo,
         mes_proceso,
+        periodo_proceso,
         coordenada_x,
         coordenada_y
     )
     VALUES (
         %s, %s, %s, %s, %s,
-        %s, %s, %s, %s, %s, %s, %s
+        %s, %s, %s, %s, %s, 
+        %s, %s, %s
     )
     """
 

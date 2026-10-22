@@ -123,6 +123,12 @@
                             <strong id="lectura-inmueble-code"></strong>
                         </p>
 
+                        <article id="lectura-anterior-box" class="lectura-anterior-info" data-lectura-anterior="">
+                            <p id="lectura-anterior-text">
+                                Lectura anterior: no disponible.
+                            </p>
+                        </article>
+
                         <form id="lectura-form" class="capture-form">
                             <label for="lectura-value">
                                 Lectura
@@ -142,9 +148,33 @@
                             <label for="lectura-observacion">
                                 Observación
                             </label>
-
-                            <textarea id="lectura-observacion" name="observacion" rows="3"
-                                placeholder="Observación opcional"></textarea>
+                            
+                            <textarea id="lectura-observacion" name="observacion" rows="3" placeholder="Observación opcional"></textarea>
+                            
+                            <fieldset class="contador-cambiado-field">
+                                <legend>
+                                    ¿El contador sufrió algún cambio?
+                                </legend>
+                            
+                                <label>
+                                    <input type="radio" name="contador_cambiado" value="no" checked>
+                                    No
+                                </label>
+                            
+                                <label>
+                                    <input type="radio" name="contador_cambiado" value="si">
+                                    Sí
+                                </label>
+                            </fieldset>
+                            
+                            <div id="observacion-tipo-container" class="form-group" hidden>
+                                <label for="observacion-tipo">
+                                    Descripción del cambio
+                                </label>
+                            
+                                <textarea id="observacion-tipo" name="observacion_tipo" rows="3" maxlength="255"
+                                    placeholder="Ejemplo: contador sustituido por daño, nuevo número..."></textarea>
+                            </div>
 
                             <div class="photo-field">
                                 <span class="photo-title">
@@ -243,13 +273,23 @@
                         </div>
 
                         <div>
+                            <dt>Correlativo</dt>
+                            <dd id="inmueble-correlativo"></dd>
+                        </div>
+
+                        <div>
                             <dt>NIM</dt>
                             <dd id="inmueble-nim"></dd>
                         </div>
 
                         <div>
-                            <dt>NIT</dt>
+                            <dt>Contador EMAX</dt>
                             <dd id="inmueble-nit"></dd>
+                        </div>
+
+                        <div>
+                            <dt>Contador EEMQ</dt>
+                            <dd id="inmueble-contador-eemq"></dd>
                         </div>
                     </dl>
                     <div id="operation-selector" class="operation-selector" hidden>

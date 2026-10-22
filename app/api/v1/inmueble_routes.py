@@ -5,6 +5,9 @@ from app.repositories.inmueble_repository import (
     get_inmueble_by_codigo,
 )
 
+from app.repositories.lectura_repository import (
+    get_lectura_anterior,
+)
 
 api_inmuebles_bp = Blueprint(
     "api_inmuebles",
@@ -39,6 +42,14 @@ def obtener_inmueble(codigo):
             }
         }), 404
 
+    inmueble_data = dict(inmueble)
+
+    inmueble_data["lectura_anterior"] = (
+        get_lectura_anterior(
+            inmueble["id"]
+        )
+    )
+
     return jsonify({
-        "data": inmueble,
+        "data": inmueble_data,
     }), 200
