@@ -100,38 +100,60 @@
                 <h2>Buscar inmueble</h2>
 
                 <div class="search-options">
-                    <form id="inmueble-search-form" class="search-form search-option">
+                    <form id="inmueble-search-form" class="search-form">
                         <label for="codigo-inmueble">
-                            Código del inmueble
+                            Código de tarjeta
                         </label>
-                
-                        <input id="codigo-inmueble" name="codigo_inmueble" type="text" autocomplete="off" required
-                            placeholder="Ejemplo: 190527-2" aria-describedby="search-message">
-                
-                        <button id="search-button" class="primary-button" type="submit">
+
+                        <input
+                            id="codigo-inmueble"
+                            name="codigo_inmueble"
+                            type="text"
+                            autocomplete="off"
+                            placeholder="Ejemplo: 162216-2"
+                        >
+
+                        <button
+                            id="search-button"
+                            class="primary-button"
+                            type="submit"
+                        >
                             Buscar por código
                         </button>
                     </form>
-                
-                    <div class="search-divider" aria-hidden="true">
-                        <span>O</span>
+
+                    <div class="search-divider">
+                        O buscar mediante el contador
                     </div>
-                
-                    <form id="contador-search-form" class="search-form search-option">
+
+                    <form id="contador-search-form" class="search-form">
                         <label for="contador-inmueble">
                             Contador EMAX
                         </label>
-                
-                        <input id="contador-inmueble" name="contador" type="text" autocomplete="off" required
-                            placeholder="Ejemplo: 03-335089" aria-describedby="search-message">
-                
-                        <button id="search-contador-button" class="primary-button" type="submit">
+
+                        <input
+                            id="contador-inmueble"
+                            name="contador_inmueble"
+                            type="text"
+                            autocomplete="off"
+                            placeholder="Ejemplo: 03-335089"
+                        >
+
+                        <button
+                            id="search-contador-button"
+                            class="primary-button"
+                            type="submit"
+                        >
                             Buscar por contador
                         </button>
                     </form>
                 </div>
 
-                <p id="search-message" class="search-message" role="status" aria-live="polite"></p>
+                <p
+                    id="search-message"
+                    class="search-message"
+                    aria-live="polite"
+                ></p>
 
                 <article id="inmueble-result" class="inmueble-result" hidden>
                     <section id="lectura-section" class="capture-section" hidden>

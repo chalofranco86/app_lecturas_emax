@@ -325,3 +325,62 @@ export async function getInmuebleByCodigo(codigo) {
         }
     })
 }
+
+export async function getInmuebleByContador(
+    contador
+) {
+    const normalizedCounter =
+        String(contador ?? "")
+            .trim()
+            .toUpperCase()
+
+    if (!normalizedCounter) {
+        return null
+    }
+
+    const database =
+        await openDatabase()
+
+    return new Promise(
+        (resolve, reject) => {
+            const transaction =
+                database.transaction(
+                    "inmuebles",
+                    "readonly"
+                )
+
+            const store =
+                transaction.objectStore(
+                    "inmuebles"
+                )
+
+            const request =
+                store.getAll()
+
+            request.onsuccess = () => {
+                const inmueble =
+                    request.result.find(
+                        item => {
+                            const storedCounter =
+                                String(
+                                    item.nit ?? ""
+                                )
+                                    .trim()
+                                    .toUpperCase()
+
+                            return (
+                                storedCounter
+                                === normalizedCounter
+                            )
+                        }
+                    )
+
+                resolve(inmueble ?? null)
+            }
+
+            request.onerror = () => {
+                reject(request.error)
+            }
+        }
+    )
+}

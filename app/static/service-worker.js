@@ -1,4 +1,4 @@
-const CACHE_VERSION = "emax-shell-v6"
+const CACHE_VERSION = "emax-shell-v8"
 const OFFLINE_URL = "/offline"
 
 const APP_SHELL = [

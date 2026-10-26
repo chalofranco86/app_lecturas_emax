@@ -1,6 +1,7 @@
 import {
     countPendingItems,
     getInmuebleByCodigo,
+    getInmuebleByContador,
     putInmueble,
     putOutboxItem,
 } from "../offline/db.js"
@@ -39,6 +40,21 @@ const codeInput =
 
 const searchButton =
     document.querySelector("#search-button")
+
+const contadorSearchForm =
+    document.querySelector(
+        "#contador-search-form"
+    )
+
+const contadorInput =
+    document.querySelector(
+        "#contador-inmueble"
+    )
+
+const searchContadorButton =
+    document.querySelector(
+        "#search-contador-button"
+    )
 
 const searchMessage =
     document.querySelector("#search-message")
@@ -723,37 +739,54 @@ function showErrorForm({
 }
 
 
-function showUnverifiedErrorForm(
-    code,
-    message
-) {
-    setSearchMessage(
-        message,
-        "warning"
-    )
-
-    showErrorForm({
-        code,
-
-        verificationMessage:
-            "El código no pudo verificarse. "
-            + "Puedes documentar el problema ahora; "
-            + "el registro conservará su identificador "
-            + "y se sincronizará cuando vuelva la conexión.",
-    })
-}
-
-
 // ======================================================
 // Caché local y búsqueda
 // ======================================================
 
+const SEARCH_TYPE = Object.freeze({
+    CODIGO: "codigo",
+    CONTADOR: "contador",
+})
+
+
+function getSearchLabel(searchType) {
+    return (
+        searchType === SEARCH_TYPE.CONTADOR
+            ? "contador"
+            : "código"
+    )
+}
+
+
+async function getCachedInmueble(
+    searchValue,
+    searchType
+) {
+    if (
+        searchType
+        === SEARCH_TYPE.CONTADOR
+    ) {
+        return getInmuebleByContador(
+            searchValue
+        )
+    }
+
+    return getInmuebleByCodigo(
+        searchValue
+    )
+}
+
+
 async function findCachedInmueble(
-    code,
+    searchValue,
+    searchType,
     message
 ) {
     const cachedInmueble =
-        await getInmuebleByCodigo(code)
+        await getCachedInmueble(
+            searchValue,
+            searchType
+        )
 
     if (!cachedInmueble) {
         return false
@@ -773,32 +806,84 @@ async function findCachedInmueble(
 }
 
 
-async function searchInmueble(code) {
+function showUnverifiedErrorForm(
+    searchValue,
+    searchType,
+    message
+) {
+    const searchLabel =
+        getSearchLabel(searchType)
+
+    setSearchMessage(
+        message,
+        "warning"
+    )
+
+    showErrorForm({
+        // Por regla heredada, tanto el código
+        // como el contador buscado se conservan
+        // en codigo_tarjeta.
+        code: searchValue,
+
+        verificationMessage:
+            `El ${searchLabel} no pudo verificarse. `
+            + "Puedes documentar el problema ahora. "
+            + "El valor buscado se conservará en "
+            + "el campo Código de tarjeta y el "
+            + "registro se sincronizará cuando "
+            + "regrese la conexión.",
+    })
+}
+
+
+async function searchInmueble(
+    searchValue,
+    searchType = SEARCH_TYPE.CODIGO
+) {
     hideInmueble()
 
-    // Sin conexión se busca únicamente en IndexedDB.
+    const searchLabel =
+        getSearchLabel(searchType)
+
+    // Sin conexión se consulta únicamente IndexedDB.
     if (!navigator.onLine) {
         const found =
             await findCachedInmueble(
-                code,
-                "Inmueble recuperado desde este dispositivo"
+                searchValue,
+                searchType,
+                "Inmueble recuperado desde "
+                + "este dispositivo"
             )
 
         if (!found) {
             showUnverifiedErrorForm(
-                code,
-                "Sin conexión: el inmueble no está guardado localmente."
+                searchValue,
+                searchType,
+                `Sin conexión: el ${searchLabel} `
+                + "no está almacenado en este "
+                + "dispositivo."
             )
         }
 
         return
     }
 
+    const endpoint =
+        searchType === SEARCH_TYPE.CONTADOR
+            ? (
+                "/api/v1/inmuebles/por-contador/"
+                + encodeURIComponent(searchValue)
+            )
+            : (
+                "/api/v1/inmuebles/"
+                + encodeURIComponent(searchValue)
+            )
+
     let response
 
     try {
         response = await fetch(
-            `/api/v1/inmuebles/${encodeURIComponent(code)}`,
+            endpoint,
             {
                 credentials: "same-origin",
 
@@ -815,16 +900,19 @@ async function searchInmueble(code) {
 
         const found =
             await findCachedInmueble(
-                code,
+                searchValue,
+                searchType,
                 "No fue posible contactar al servidor. "
                 + "Se muestran los datos guardados."
             )
 
         if (!found) {
             showUnverifiedErrorForm(
-                code,
+                searchValue,
+                searchType,
                 "No fue posible contactar al servidor "
-                + "y el inmueble no está guardado localmente."
+                + `y el ${searchLabel} no está `
+                + "guardado localmente."
             )
         }
 
@@ -841,21 +929,25 @@ async function searchInmueble(code) {
         return
     }
 
-    // El servidor confirma que el inmueble no existe.
     if (response.status === 404) {
         setSearchMessage(
-            "El servidor confirmó que "
-            + "el código no existe.",
+            `El servidor confirmó que el `
+            + `${searchLabel} no existe.`,
             "warning"
         )
 
         showErrorForm({
-            code,
+            // La regla heredada guarda cualquiera
+            // de los dos identificadores aquí.
+            code: searchValue,
 
             verificationMessage:
-                "El servidor confirmó que este código "
-                + "no existe. Registra los datos "
-                + "disponibles del inmueble con error.",
+                `El servidor confirmó que este `
+                + `${searchLabel} no está registrado. `
+                + "El valor buscado se conservará "
+                + "en Código de tarjeta. Describe "
+                + "en las observaciones el problema "
+                + "encontrado.",
         })
 
         return
@@ -864,7 +956,8 @@ async function searchInmueble(code) {
     if (!response.ok) {
         const found =
             await findCachedInmueble(
-                code,
+                searchValue,
+                searchType,
                 "El servidor presentó un problema. "
                 + "Se muestran los datos guardados."
             )
@@ -1497,41 +1590,88 @@ showErrorButton.addEventListener(
 // Búsqueda del inmueble
 // ======================================================
 
+async function executeSearch({
+    value,
+    searchType,
+    button,
+    emptyMessage,
+}) {
+    if (!value) {
+        setSearchMessage(
+            emptyMessage,
+            "warning"
+        )
+
+        return
+    }
+
+    button.disabled = true
+
+    setSearchMessage(
+        searchType === SEARCH_TYPE.CONTADOR
+            ? "Buscando contador…"
+            : "Buscando inmueble…"
+    )
+
+    try {
+        await searchInmueble(
+            value,
+            searchType
+        )
+    } catch (error) {
+        console.error(error)
+
+        setSearchMessage(
+            "Ocurrió un error durante "
+            + "la búsqueda",
+            "error"
+        )
+    } finally {
+        button.disabled = false
+    }
+}
+
+
 searchForm.addEventListener(
     "submit",
     async event => {
         event.preventDefault()
 
-        const code =
-            codeInput.value.trim()
+        await executeSearch({
+            value:
+                codeInput.value.trim(),
 
-        if (!code) {
-            setSearchMessage(
+            searchType:
+                SEARCH_TYPE.CODIGO,
+
+            button:
+                searchButton,
+
+            emptyMessage:
                 "Ingresa el código del inmueble",
-                "warning"
-            )
+        })
+    }
+)
 
-            return
-        }
 
-        searchButton.disabled = true
+contadorSearchForm.addEventListener(
+    "submit",
+    async event => {
+        event.preventDefault()
 
-        setSearchMessage(
-            "Buscando inmueble…"
-        )
+        await executeSearch({
+            value:
+                contadorInput.value.trim(),
 
-        try {
-            await searchInmueble(code)
-        } catch (error) {
-            console.error(error)
+            searchType:
+                SEARCH_TYPE.CONTADOR,
 
-            setSearchMessage(
-                "Ocurrió un error durante la búsqueda",
-                "error"
-            )
-        } finally {
-            searchButton.disabled = false
-        }
+            button:
+                searchContadorButton,
+
+            emptyMessage:
+                "Ingresa el número de contador",
+        })
     }
 )
 
