@@ -69,6 +69,36 @@
             font-size: .9rem;
             color: #667;
         }
+
+        .offline-actions {
+            display: grid;
+            gap: 0.75rem;
+            margin-top: 1.25rem;
+        }
+
+        .offline-capture-button {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 48px;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            background-color: #166534;
+            color: #ffffff;
+            font-size: 1rem;
+            font-weight: 700;
+            text-align: center;
+            text-decoration: none;
+        }
+
+        .offline-capture-button:hover,
+        .offline-capture-button:focus-visible {
+            background-color: #14532d;
+        }
+
+        .retry-button {
+            min-height: 48px;
+        }
     </style>
 </head>
 
@@ -85,6 +115,10 @@
             Registros pendientes
             <strong id="pending-count">0</strong>
         </section>
+
+        <a id="open-offline-capture" href="{{ url_for('pwa.captura') }}" class="offline-capture-button">
+            Registrar lectura o error sin conexión
+        </a>
 
         <button id="retry-button" type="button">
             Volver a intentar

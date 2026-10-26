@@ -2,8 +2,8 @@
 DB_CONFIG = {
     "host": "localhost",
     "user": "root",
-    "password": "",
-    "port": 3307,
+    "password": "0312",
+    "port": 3306,
     "database": "lectores_agua",
     "collation": "utf8mb4_general_ci",  # Collation compatible con versiones antiguas
     "charset": "utf8mb4"  # Charset compatible

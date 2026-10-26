@@ -96,5 +96,25 @@
             }
             return false;
         }
+        const capturaUrl =
+                "{{ url_for('pwa.captura') }}"
+
+            function abrirCapturaSinConexion() {
+                if (!navigator.onLine) {
+                    window.location.replace(
+                        capturaUrl
+                    )
+                }
+            }
+
+            window.addEventListener(
+                "offline",
+                abrirCapturaSinConexion
+            )
+
+            document.addEventListener(
+                "DOMContentLoaded",
+                abrirCapturaSinConexion
+            )
     </script>
 {% endblock %}

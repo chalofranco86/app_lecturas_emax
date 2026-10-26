@@ -40,8 +40,23 @@ def get_inmueble_by_codigo(codigo):
 
 
 def get_inmueble_by_contador(contador):
-    query = "SELECT * FROM inmuebles WHERE nit = %s"
-    inmuebles = execute_query(query, (contador,), fetch=True)
+    contador = str(contador or "").strip()
+
+    if not contador:
+        return None
+
+    query = """
+    SELECT *
+    FROM inmuebles
+    WHERE nit = %s
+    LIMIT 1
+    """
+
+    inmuebles = execute_query(
+        query,
+        (contador,),
+        fetch=True,
+    )
 
     if inmuebles:
         return inmuebles[0]

@@ -379,3 +379,51 @@ body {
 [hidden] {
     display: none !important;
 }
+
+.search-options {
+    display: grid;
+    gap: 1rem;
+}
+
+.search-option {
+    padding: 1rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 0.75rem;
+    background-color: #f8fafc;
+}
+
+.search-option label {
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+.search-option input {
+    min-height: 48px;
+    font-size: 1rem;
+}
+
+.search-option button {
+    min-height: 48px;
+    font-size: 1rem;
+}
+
+.search-divider {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    color: #64748b;
+    font-weight: 700;
+}
+
+.search-divider::before,
+.search-divider::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background-color: #cbd5e1;
+}
+
+.search-divider span {
+    padding: 0 0.25rem;
+}
+
