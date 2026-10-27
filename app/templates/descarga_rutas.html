@@ -1,0 +1,259 @@
+{% extends "base.html" %}
+
+{% block title %}
+Preparar rutas offline
+{% endblock %}
+
+{% block content %}
+<style>
+    .route-download-container {
+        width: min(100%, 680px);
+        margin: 20px auto;
+    }
+
+    .route-download-card {
+        padding: 24px;
+        background: white;
+        border-radius: 12px;
+        box-shadow:
+            0 4px 14px rgba(0, 0, 0, 0.12);
+    }
+
+    .route-download-card h1 {
+        margin-top: 0;
+        color: #1e88e5;
+    }
+
+    .route-download-card form {
+        display: grid;
+        gap: 16px;
+    }
+
+    .field-group {
+        display: grid;
+        gap: 7px;
+    }
+
+    .field-group label {
+        font-weight: 600;
+        color: #37474f;
+    }
+
+    .field-group input[type="text"],
+    .field-group input[type="month"] {
+        box-sizing: border-box;
+        width: 100%;
+        padding: 12px;
+        border: 2px solid #bbdefb;
+        border-radius: 7px;
+        font-size: 16px;
+    }
+
+    .field-group input:focus {
+        outline: none;
+        border-color: #1e88e5;
+    }
+
+    .checkbox-group {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+    }
+
+    .checkbox-group input {
+        width: 20px;
+        height: 20px;
+    }
+
+    .download-button {
+        padding: 13px;
+        border: none;
+        border-radius: 7px;
+        background: #1e88e5;
+        color: white;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+    .download-button:hover {
+        background: #1565c0;
+    }
+
+    .download-button:disabled {
+        background: #90a4ae;
+        cursor: not-allowed;
+    }
+
+    .connection-message,
+    .download-message,
+    .download-progress,
+    .download-metadata {
+        margin-top: 16px;
+        padding: 13px;
+        border-radius: 7px;
+    }
+
+    .message-info {
+        color: #0d47a1;
+        background: #e3f2fd;
+    }
+
+    .message-success {
+        color: #1b5e20;
+        background: #e8f5e9;
+    }
+
+    .message-error {
+        color: #b71c1c;
+        background: #ffebee;
+    }
+
+    .download-progress progress {
+        width: 100%;
+        margin-bottom: 8px;
+    }
+
+    .download-metadata {
+        background: #f5f5f5;
+    }
+
+    .download-metadata p {
+        margin: 6px 0;
+    }
+
+    .route-help {
+        color: #546e7a;
+        line-height: 1.5;
+    }
+
+    @media (max-width: 600px) {
+        .route-download-card {
+            padding: 18px;
+        }
+    }
+</style>
+
+<div class="route-download-container">
+    <section class="route-download-card">
+        <h1>Preparar trabajo offline</h1>
+
+        <p class="route-help">
+            Descarga la ruta antes de salir a campo.
+            Si el padrón fue actualizado, vuelve a
+            descargarla para reemplazar la información
+            anterior.
+        </p>
+
+        <div
+            id="route-connection-message"
+            class="connection-message message-info"
+            role="status"
+            aria-live="polite"
+        ></div>
+
+        <form id="route-download-form">
+            <div class="field-group">
+                <label for="route-period">
+                    Periodo de proceso
+                </label>
+
+                <input
+                    type="month"
+                    id="route-period"
+                    name="periodo_proceso"
+                    required
+                >
+            </div>
+
+            <div class="field-group">
+                <label for="route-number">
+                    Número de ruta
+                </label>
+
+                <input
+                    type="text"
+                    id="route-number"
+                    name="ruta"
+                    inputmode="numeric"
+                    autocomplete="off"
+                    placeholder="Ejemplo: 45"
+                >
+            </div>
+
+            <label class="checkbox-group">
+                <input
+                    type="checkbox"
+                    id="without-route"
+                    name="sin_ruta"
+                >
+
+                <span>
+                    Descargar inmuebles sin ruta asignada
+                </span>
+            </label>
+
+            <button
+                type="submit"
+                id="download-route-button"
+                class="download-button"
+            >
+                Descargar ruta
+            </button>
+        </form>
+
+        <div
+            id="route-download-progress"
+            class="download-progress message-info"
+            hidden
+        >
+            <progress></progress>
+
+            <div id="route-progress-text">
+                Preparando descarga…
+            </div>
+        </div>
+
+        <div
+            id="route-download-message"
+            class="download-message"
+            role="status"
+            aria-live="polite"
+            hidden
+        ></div>
+
+        <section
+            id="route-download-metadata"
+            class="download-metadata"
+            hidden
+        >
+            <strong>Última descarga almacenada</strong>
+
+            <p>
+                Periodo:
+                <span id="stored-period">—</span>
+            </p>
+
+            <p>
+                Cantidad:
+                <span id="stored-count">0</span>
+            </p>
+
+            <p>
+                Fecha:
+                <span id="stored-date">—</span>
+            </p>
+        </section>
+    </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script
+    type="module"
+    src="{{ url_for(
+        'static',
+        filename='js/pwa/descarga_rutas.js'
+    ) }}"
+></script>
+{% endblock %}

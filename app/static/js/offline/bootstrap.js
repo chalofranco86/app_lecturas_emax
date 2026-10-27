@@ -7,18 +7,13 @@ import {
     updateOutboxItem,
     putInmueble,
     getInmuebleByCodigo,
+    getInmuebleByContador,
+    replaceRouteDownload,
+    getRouteDownloadMetadata,
+    countRouteInmuebles,
 } from "./db.js"
 
 import { syncOutbox } from "./sync.js"
-
-const offlineDatabase = {
-    openDatabase,
-    putOutboxItem,
-    getAllOutboxItems,
-    deleteOutboxItem,
-    countPendingItems,
-};
-
 
 // Exposición temporal para pruebas desde la consola.
 window.emaxOffline = {
@@ -30,6 +25,10 @@ window.emaxOffline = {
     updateOutboxItem,
     putInmueble,
     getInmuebleByCodigo,
+    getInmuebleByContador,
+    replaceRouteDownload,
+    getRouteDownloadMetadata,
+    countRouteInmuebles,
     syncOutbox,
     attemptAutomaticSync,
 }

@@ -22,9 +22,10 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
-
         .navbar a {
             color: white;
             text-decoration: none;
@@ -44,6 +45,7 @@
 
         .navbar .menu {
             display: flex;
+            flex-wrap: wrap;
             gap: 10px;
         }
 
@@ -60,6 +62,8 @@
         <div class="menu">
             {% if current_user.is_authenticated %}
                 <a href="{{ url_for('dashboard.buscar_inmueble') }}">Home</a>
+                <a href="{{ url_for('pwa.descarga_rutas') }}">Descargar rutas</a>
+                <a href="{{ url_for('pwa.captura') }}">Captura de campo</a>
                 <a href="{{ url_for('lecturas.listar_lecturas') }}">Lista de Lecturas</a>
                 <a href="{{ url_for('inmueble_import.importar_inmuebles') }}">Importar Inmuebles</a>
                 <a href="{{ url_for('errores.listar_errores') }}">Inmuebles con Errores</a>
@@ -72,12 +76,18 @@
     </nav>
 
     <!-- Contenido dinámico de cada página -->
-    <div class="content">
+        <div class="content">
         {% block content %}{% endblock %}
     </div>
-    <script type="module" src="{{ url_for(
+
+    <script
+        type="module"
+        src="{{ url_for(
             'static',
             filename='js/offline/bootstrap.js'
-        ) }}"></script>
+        ) }}"
+    ></script>
+
+    {% block scripts %}{% endblock %}
 </body>
 </html>

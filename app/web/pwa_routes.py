@@ -1,3 +1,5 @@
+from flask_login import login_required
+
 from flask import (
     Blueprint,
     current_app,
@@ -30,3 +32,10 @@ def service_worker():
 @pwa_bp.get("/captura")
 def captura():
     return render_template("captura.html")
+
+@pwa_bp.get("/descarga-rutas")
+@login_required
+def descarga_rutas():
+    return render_template(
+        "descarga_rutas.html"
+    )

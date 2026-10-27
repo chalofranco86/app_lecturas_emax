@@ -1,4 +1,9 @@
-from flask import Blueprint, jsonify
+from flask import (
+    Blueprint,
+    current_app,
+    jsonify,
+    request,
+)
 from flask_login import login_required
 
 from app.repositories.inmueble_repository import (
@@ -10,12 +15,97 @@ from app.repositories.lectura_repository import (
     get_lectura_anterior,
 )
 
+from app.services.sync_service import (
+    prepare_route_download,
+)
+
 api_inmuebles_bp = Blueprint(
     "api_inmuebles",
     __name__,
     url_prefix="/inmuebles",
 )
 
+@api_inmuebles_bp.get(
+    "/descarga-ruta"
+)
+@login_required
+def descargar_ruta_offline():
+    ruta = str(
+        request.args.get("ruta") or ""
+    ).strip()
+
+    periodo_proceso = str(
+        request.args.get(
+            "periodo_proceso"
+        ) or ""
+    ).strip()
+
+    sin_ruta_value = str(
+        request.args.get(
+            "sin_ruta"
+        ) or ""
+    ).strip().lower()
+
+    valid_true_values = {
+        "1",
+        "true",
+        "si",
+        "sí",
+    }
+
+    valid_false_values = {
+        "",
+        "0",
+        "false",
+        "no",
+    }
+
+    if (
+        sin_ruta_value
+        not in (
+            valid_true_values
+            | valid_false_values
+        )
+    ):
+        return jsonify({
+            "ok": False,
+            "code": "INVALID_SIN_RUTA",
+            "message": (
+                "sin_ruta debe ser 1, 0, "
+                "true o false"
+            ),
+        }), 400
+
+    sin_ruta = (
+        sin_ruta_value
+        in valid_true_values
+    )
+
+    try:
+        result = prepare_route_download(
+            periodo_value=periodo_proceso,
+            ruta=ruta,
+            sin_ruta=sin_ruta,
+        )
+    except Exception:
+        current_app.logger.exception(
+            "No fue posible preparar "
+            "la descarga de ruta"
+        )
+
+        return jsonify({
+            "ok": False,
+            "code": "DATABASE_ERROR",
+            "message": (
+                "No fue posible obtener "
+                "la información de la ruta"
+            ),
+        }), 500
+
+    if not result["ok"]:
+        return jsonify(result), 400
+
+    return jsonify(result), 200
 
 @api_inmuebles_bp.get("/<codigo>")
 @login_required

@@ -368,7 +368,7 @@ async function updatePendingCount() {
     try {
         pendingCount.textContent =
             await countPendingItems()
-    } catch (error) {
+    } catch (error) {  
         console.error(
             "No se pudo actualizar el contador:",
             error
