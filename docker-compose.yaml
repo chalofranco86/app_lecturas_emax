@@ -1,0 +1,130 @@
+services:
+  db:
+    image: ${MARIADB_IMAGE:-mariadb:12.3.2}
+
+    container_name: emax_db
+
+    environment:
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MARIADB_DATABASE: ${DB_NAME}
+      MARIADB_USER: ${DB_USER}
+      MARIADB_PASSWORD: ${DB_PASSWORD}
+
+    ports:
+      - "127.0.0.1:3307:3306"
+
+    volumes:
+      - db_data:/var/lib/mysql
+
+      - ./docker/mariadb/conf.d/zz-emax.cnf:/etc/mysql/mariadb.conf.d/zz-emax.cnf:ro
+
+      - ./docker/mariadb/init:/docker-entrypoint-initdb.d:ro
+
+    restart: unless-stopped
+
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "mariadb-admin ping -h 127.0.0.1 -uroot -p\"$${MARIADB_ROOT_PASSWORD}\" --silent"
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 30s
+
+    cpus: 2.0
+    mem_limit: 2g
+
+    networks:
+      - emax_network
+
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    container_name: emax_web
+
+    environment:
+      DB_HOST: db
+      DB_PORT: "3306"
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      SECRET_KEY: ${SECRET_KEY}
+      UPLOAD_FOLDER: /app/app/static/uploads
+      MAX_CONTENT_LENGTH: "20971520"
+      SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-1}
+      PREFERRED_URL_SCHEME: ${PREFERRED_URL_SCHEME:-https}
+
+    ports:
+      - "127.0.0.1:5055:5055"
+
+    volumes:
+      - uploads_data:/app/app/static/uploads
+
+    depends_on:
+      db:
+        condition: service_healthy
+
+    restart: unless-stopped
+
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:5055/api/v1/health', timeout=5)"
+        ]
+      interval: 20s
+      timeout: 6s
+      retries: 5
+      start_period: 30s
+
+    cpus: 1.5
+    mem_limit: 1g
+
+    networks:
+      - emax_network
+
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+
+    container_name: emax_cloudflared
+
+    command:
+      - tunnel
+      - --no-autoupdate
+      - run
+      - --token
+      - "${CLOUDFLARE_TUNNEL_TOKEN}"
+
+    depends_on:
+      web:
+        condition: service_healthy
+
+    restart: unless-stopped
+
+    cpus: 0.5
+    mem_limit: 256m
+
+    networks:
+      - emax_network
+
+
+volumes:
+  db_data:
+    name: emax_db_data
+
+  uploads_data:
+    name: emax_uploads_data
+
+
+networks:
+  emax_network:
+    name: emax_network
+    driver: bridge

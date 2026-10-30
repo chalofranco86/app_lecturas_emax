@@ -1,0 +1,14 @@
+[mariadb]
+
+character-set-server=utf8mb4
+collation-server=utf8mb4_general_ci
+
+skip-name-resolve=1
+max_connections=100
+
+innodb_buffer_pool_size=512M
+innodb_log_file_size=128M
+
+slow_query_log=1
+long_query_time=1
+slow_query_log_file=/var/lib/mysql/slow.log

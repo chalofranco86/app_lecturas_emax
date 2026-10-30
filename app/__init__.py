@@ -1,6 +1,7 @@
 # app/__init__.py
 from flask import Flask
 
+from werkzeug.middleware.proxy_fix import ProxyFix
 from app.config import Config
 from app.extensions import login_manager
 from app.infrastructure.file_storage import ensure_upload_folder
@@ -27,6 +28,14 @@ def load_user(user_id):
 
 def create_app(config_class=Config):
     app = Flask(__name__)
+
+    app.wsgi_app = ProxyFix(
+        app.wsgi_app,
+        x_for=1,
+        x_proto=1,
+        x_host=1,
+    )
+
     app.config.from_object(config_class)
     app.register_blueprint(pwa_bp)
 
